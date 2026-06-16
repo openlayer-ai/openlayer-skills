@@ -15,6 +15,9 @@ Docs: https://docs.openlayer.com/guides/gh-actions.md and https://docs.openlayer
 - [ ] The repo has a valid `openlayer.json` + `tests.json` and `openlayer validate` passes locally.
 - [ ] Decide the trigger (PR, push to a branch, manual dispatch) with the user.
 - [ ] Install the CLI in the job (cache it where possible).
+- [ ] Authenticate **headless** — never `openlayer login`/`link` in CI (they are interactive/TTY-only
+      and hang). Set env vars instead: `OPENLAYER_API_KEY`, `OPENLAYER_PROJECT_ID` (the target project,
+      replaces `link`), and `OPENLAYER_BASE_URL` if self-hosted.
 - [ ] Push and **wait** so results gate the job:
       `openlayer push -m "CI: $GIT_SHA" -w` — the exit code reflects test pass/fail; let a non-zero
       exit fail the build. (Agentic CI alternative: MCP `push_commit` + `wait_for_commit_results`.)

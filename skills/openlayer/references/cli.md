@@ -25,11 +25,27 @@ Confirm the current install command/URL from the docs if it fails.
 ## Auth & profiles
 
 ```bash
-openlayer login            # stores key in ~/.openlayer/config.json (supports multiple profiles)
+openlayer login            # INTERACTIVE (browser/TTY) — stores key in ~/.openlayer/config.toml
 openlayer whoami           # verify auth / current profile
 ```
 
 Global flags: `--api-key`, `--profile-name`, `--output-mode terminal|ci`, `--debug`.
+
+### Non-interactive auth (agents & CI) — prefer this
+
+`openlayer login` and `openlayer link` are **interactive (TTY-only)** and will hang an agent or CI job.
+You do NOT need them: the CLI reads everything from env vars, so push works headless.
+
+```bash
+export OPENLAYER_API_KEY=...
+export OPENLAYER_PROJECT_ID=...     # the target project's id — replaces `openlayer link`
+export OPENLAYER_BASE_URL=...       # self-hosted/local only
+openlayer push -m "msg" -w          # no login, no link needed
+```
+
+If you ever see `Error: project id not found. Run 'openlayer link'`, do **not** run `link` — set
+`OPENLAYER_PROJECT_ID` instead. (`OPENLAYER_WORKSPACE_ID` is also read from env if needed; the
+workspace is otherwise derived from the API key.)
 
 ## Core commands
 
@@ -41,7 +57,7 @@ Global flags: `--api-key`, `--profile-name`, `--output-mode terminal|ci`, `--deb
 | `openlayer export <pipelineId> <start> <end>` | Export monitoring data from a pipeline |
 | `openlayer projects` | List/manage projects |
 | `openlayer tests` / `metrics` / `batch` / `bundle` / `datasources` | Manage tests, metrics, batch runs, bundles, data sources |
-| `openlayer link` | Link a Git repo to a project |
+| `openlayer link` | Link a directory to a project (INTERACTIVE — for automation set `OPENLAYER_PROJECT_ID` instead) |
 | `openlayer profile` | Manage CLI profiles |
 | `openlayer update` | Update the CLI |
 
@@ -49,6 +65,8 @@ Global flags: `--api-key`, `--profile-name`, `--output-mode terminal|ci`, `--deb
 
 | Mistake | Problem | Fix |
 | ------- | ------- | --- |
+| Running `openlayer login`/`link` in an agent or CI job | They are TTY-only and hang (even emit a cursor-position query) | Set `OPENLAYER_API_KEY` + `OPENLAYER_PROJECT_ID` (+ `OPENLAYER_BASE_URL`) and push headless |
+| Following the `project id not found. Run 'openlayer link'` hint into interactive `link` | Hangs without a TTY | Set `OPENLAYER_PROJECT_ID` instead |
 | Expecting a generic REST client | CLI is push/workflow only | Use MCP/SDK/REST for data (`references/data-access.md`) |
 | `npx`/`pip` install | Wrong — it's a Go binary | Use the platform install script |
 | `push` without `validate` | Late, cryptic failures | `openlayer validate` first |

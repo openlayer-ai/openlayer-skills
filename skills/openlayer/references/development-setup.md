@@ -49,9 +49,17 @@ page (`https://docs.openlayer.com/tests/catalog/<test>.md`) or generate one with
 
 ```bash
 openlayer validate           # check openlayer.json + tests.json before pushing
-openlayer login              # once, stores the key in ~/.openlayer/config.json
-openlayer push -m "message" -w   # -w waits for results; add -t to tail logs
+
+# Non-interactive (agents/CI) — preferred. No `login`/`link` needed; the CLI reads env vars:
+export OPENLAYER_API_KEY=...
+export OPENLAYER_PROJECT_ID=...      # target project id (replaces interactive `openlayer link`)
+export OPENLAYER_BASE_URL=...        # self-hosted/local only
+openlayer push -m "message" -w       # -w waits for results; add -t to tail logs
 ```
+
+`openlayer login` and `openlayer link` are interactive (TTY-only) and will hang an agent — skip them
+and set `OPENLAYER_PROJECT_ID`. If you see `project id not found. Run 'openlayer link'`, set that env
+var instead of running `link`. See `references/cli.md`.
 
 Or via MCP when connected: `push_commit` then `wait_for_commit_results`. After push, Openlayer runs
 the model, generates insights, evaluates tests, and reports pass/fail (commit logs in the app, Git,
