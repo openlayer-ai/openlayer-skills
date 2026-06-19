@@ -61,16 +61,19 @@ before confirming the first one publishes — most failures are "configured but 
 
 ### 5. Enrich (only what's relevant — infer from code, ask when unclear)
 
-| If the code has…                          | Add                          | Docs |
-| ----------------------------------------- | ---------------------------- | ---- |
-| Conversation history / chat endpoints     | user/session context         | https://docs.openlayer.com/monitoring/sessions-and-users.md |
-| Retrieval / RAG                           | context (+ question)         | https://docs.openlayer.com/monitoring/context.md |
-| Useful request attributes                 | metadata, promoted columns   | https://docs.openlayer.com/monitoring/metadata.md |
-| Ground truth arriving later               | update rows after the fact   | https://docs.openlayer.com/monitoring/updating-data.md |
+| If the code has…                          | Add                          | How (verified) | Docs |
+| ----------------------------------------- | ---------------------------- | --- | ---- |
+| Conversation history / chat endpoints     | user/session context         | `set_user_session_context(user_id=…, session_id=…)` → lands as `openlayer_user_id` / `openlayer_session_id` | https://docs.openlayer.com/monitoring/sessions-and-users.md |
+| Retrieval / RAG                           | context (+ question)         | `@trace(context_kwarg="…", question_kwarg="…")` on the **root** fn — they resolve from its **input args** (NOT `update_current_trace`) | https://docs.openlayer.com/monitoring/context.md |
+| Useful request attributes                 | promoted columns             | `@trace(promote=[...])` to surface input args as columns; arbitrary `update_current_trace(metadata=…)` does **not** become row columns unless the pipeline promotes it | https://docs.openlayer.com/monitoring/metadata.md |
+| Ground truth arriving later               | update rows after the fact   | `inference_pipelines.rows.update(...)` | https://docs.openlayer.com/monitoring/updating-data.md |
 
-Use `update_current_trace` / `set_user_session_context` from `openlayer.lib` for context. For local
-dev without publishing, set `OPENLAYER_DISABLE_PUBLISH=true`. Offline buffering is available for
-unreliable networks (see the tracing docs).
+`set_user_session_context`, `update_current_trace`, `update_current_step`, `trace`, `trace_async`,
+`trace_openai` are all importable from `openlayer.lib`. **Context/question are driven by the
+`context_kwarg`/`question_kwarg` decorator args (read from the root function's inputs), not by
+`update_current_trace`** — setting them via `update_current_trace` won't populate the row's
+`context`/`_question` columns. For local dev without publishing, set `OPENLAYER_DISABLE_PUBLISH=true`.
+Offline buffering is available for unreliable networks (see the tracing docs).
 
 ### 6. Point the user to next steps
 
