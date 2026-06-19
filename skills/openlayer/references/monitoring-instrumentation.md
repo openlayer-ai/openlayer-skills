@@ -74,7 +74,9 @@ unreliable networks (see the tracing docs).
 
 ### 6. Point the user to next steps
 
-Tests run on the live traces — to add quality checks, go to `references/tests-and-guardrails.md`.
+Tests run on the live traces — to add quality checks, see the tests docs
+(https://docs.openlayer.com/tests/overview.md) and guardrails docs
+(https://docs.openlayer.com/guardrails/overview.md).
 
 ## Common Mistakes
 

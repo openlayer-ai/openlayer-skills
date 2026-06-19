@@ -42,12 +42,11 @@ Threshold fields: `insightName`, `measurement`, `operator` (`is`, `>`, `>=`, `<`
 optional `insightParameters`.
 
 **Do not invent `subtype`/threshold shapes.** Copy a working example from the relevant test catalog
-page (`https://docs.openlayer.com/tests/catalog/<test>.md`) or generate one with the MCP tool
-`generate_test_config`. See `references/tests-and-guardrails.md`.
+page (`https://docs.openlayer.com/tests/catalog/<test>.md`).
 
 When a test targets the model output, reference it as **`openlayer_output`** (the canonical name), not
 the raw `outputColumnName` value — a wrong column name makes the test silently **SKIPPED**, not failed.
-After the push, check per-test status, not just pass/fail totals. See `references/tests-and-guardrails.md`.
+After the push, check per-test status, not just pass/fail totals.
 
 ### 4. Validate, then push
 
@@ -65,14 +64,14 @@ openlayer push -m "message" -w       # -w waits for results; add -t to tail logs
 and set `OPENLAYER_PROJECT_ID`. If you see `project id not found. Run 'openlayer link'`, set that env
 var instead of running `link`. See `references/cli.md`.
 
-Or via MCP when connected: `push_commit` then `wait_for_commit_results`. After push, Openlayer runs
-the model, generates insights, evaluates tests, and reports pass/fail (commit logs in the app, Git,
-or REST `commits.test_results`). See `references/cli.md` and `references/data-access.md`.
+After push, Openlayer runs the model, generates insights, evaluates tests, and reports pass/fail
+(commit logs in the app, Git, or REST `commits.test_results`). See `references/cli.md` and
+`references/data-access.md`.
 
 ### 5. On failures
 
-Inspect failing rows and iterate — `references/mcp-fix-loop.md` covers the agentic
-`fetch_failed_rows_for_goal → propose_fix → apply_and_push → wait_for_commit_results` loop.
+Inspect the failing rows (via the app, or the SDK/REST `commits.test_results` and row endpoints —
+see `references/data-access.md`), understand why, then fix and re-push.
 
 ## Development vs Monitoring (don't mix them up)
 
@@ -89,7 +88,7 @@ Inspect failing rows and iterate — `references/mcp-fix-loop.md` covers the age
 | ------- | ------- | --- |
 | Confusing dev push with monitoring publish | Wrong plane entirely | Dev = `openlayer push` commits; monitoring = SDK traces to a pipeline |
 | Wrong or omitted `taskType` | Validation/run fails | Set one of the four task types; match dataset fields to it |
-| Inventing `subtype` / threshold shape | Test won't sync or evaluate | Copy from the test catalog page or use MCP `generate_test_config` |
+| Inventing `subtype` / threshold shape | Test won't sync or evaluate | Copy from the test catalog page (`tests/catalog/<test>.md`) |
 | Dataset column names don't match config | Rows fail / outputs unmapped | Align `inputVariableNames` / `featureNames` / `groundTruthColumnName` with the file |
 | Pushing without `-w` in automation | Job "passes" before results exist | Use `-w` (or MCP `wait_for_commit_results`) and fail on failed tests |
 | Skipping `openlayer validate` | Push fails late with a cryptic error | Always `validate` first |

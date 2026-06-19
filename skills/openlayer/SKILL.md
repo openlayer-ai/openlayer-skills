@@ -52,11 +52,10 @@ Follow these for ALL Openlayer work:
 When you need to read or modify Openlayer data programmatically, use this tiered fallback. Details and
 the SDK resource map are in `references/data-access.md`.
 
-1. **MCP (preferred when connected).** If the Openlayer MCP server is available, use its tools
-   (`list_projects`, `list_inference_pipelines`, `list_*_test_results`, `fetch_failed_rows_for_goal`, …,
-   and `call_openlayer_api` for anything uncovered). See `references/mcp-setup.md`.
-2. **SDK.** Otherwise use the typed client: `Openlayer(api_key=...)` (Python) or `new Openlayer({ apiKey })` (TS).
-3. **Raw REST** via the OpenAPI as a last resort.
+1. **SDK (default).** Use the typed client: `Openlayer(api_key=...)` (Python) or `new Openlayer({ apiKey })` (TS).
+2. **Raw REST** via the OpenAPI as a last resort.
+
+(If the Openlayer MCP server happens to be connected, prefer its tools — covered in a separate skill.)
 
 > The Openlayer **CLI is NOT the data-access tool** — it is the development/push workflow tool
 > (`openlayer push`, `validate`, `export`, …). See `references/cli.md`.
@@ -78,13 +77,10 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 | ------------------------------------------------------- | ----------------------------------------- |
 | Add live tracing / observability to code               | `references/monitoring-instrumentation.md` |
 | Set up offline evals (`openlayer.json` / `tests.json`)  | `references/development-setup.md`          |
-| Create/choose tests, thresholds, or guardrails          | `references/tests-and-guardrails.md`       |
 | Publish or stream inference rows directly               | `references/data-streaming.md`             |
 | Gate CI/CD on eval results                              | `references/ci-cd.md`                      |
-| Debug/fix failing test rows (agentic loop)              | `references/mcp-fix-loop.md`               |
 | Query data programmatically                             | `references/data-access.md`                |
 | Install/use the Openlayer CLI                           | `references/cli.md`                        |
-| Install the Openlayer MCP server                        | `references/mcp-setup.md`                  |
 | Find or fetch docs                                      | `references/docs-access.md`                |
 | Install or upgrade the SDK                              | `references/sdk-upgrade.md`                |
 | Report a problem with this skill                        | `references/skill-feedback.md`             |
