@@ -29,7 +29,7 @@ Openlayer docs change frequently. Resolve the current answer from docs before wr
 ## When you cite docs to the user
 
 Link the page (without `.md`, so it opens in a browser) and quote only the relevant snippet. If a doc
-contradicts this skill, trust the doc and consider reporting the gap (`references/skill-feedback.md`).
+contradicts this skill, trust the doc.
 
 ## Common Mistakes
 

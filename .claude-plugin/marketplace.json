@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "openlayer",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "Openlayer agent skills marketplace \u2014 teach AI coding agents to integrate apps with Openlayer.",
   "owner": {
     "name": "Openlayer",

@@ -89,4 +89,3 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 | Install/use the Openlayer CLI                           | `references/cli.md`                        |
 | Find or fetch docs                                      | `references/docs-access.md`                |
 | Install or upgrade the SDK                              | `references/sdk-upgrade.md`                |
-| Report a problem with this skill                        | `references/skill-feedback.md`             |
