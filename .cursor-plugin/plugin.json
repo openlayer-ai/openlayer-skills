@@ -1,7 +1,7 @@
 {
   "name": "openlayer",
   "displayName": "Openlayer",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Skills for working with Openlayer \u2014 the AI evaluation and observability platform for tracing/monitoring, offline testing, evals, and CI/CD gates.",
   "author": {
     "name": "Openlayer",
