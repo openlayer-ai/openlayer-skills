@@ -1,0 +1,68 @@
+---
+name: openlayer-tests
+description: Create and configure Openlayer tests from the prebuilt catalog (80+) — thresholds, LLM-as-a-judge rubric, SQL-query, statistical, RAG, data-quality, and custom-metric tests. Use when choosing or authoring tests/evals in development or monitoring mode.
+---
+
+# Openlayer Tests
+
+Tests ("goals") evaluate your data and pass/fail against thresholds — in development (on a commit) or
+monitoring (on live traces). Openlayer ships 80+ prebuilt tests; **don't invent test configs — copy a
+working shape from the catalog.**
+
+Docs:
+- Overview + browsing: https://docs.openlayer.com/tests/overview.md , https://docs.openlayer.com/tests/browse.md
+- Catalog (one page per test, with a copy-paste config): https://docs.openlayer.com/tests/catalog/<test>.md — discover all via https://docs.openlayer.com/llms.txt
+- Custom metrics: see `references/custom-metrics.md`
+
+## Anatomy of a test
+
+`name`, `type` (`performance` | `integrity` | `consistency`), `subtype` (the platform test id), `mode`
+(`development` | `monitoring`), and `thresholds[]`. Each threshold: `insightName`, `measurement`,
+`operator` (`is`, `>`, `>=`, `<`, `<=`), `value`, optional `insightParameters`.
+
+- **Development** tests live in `tests.json` (see `references/development-setup.md`) or
+  `projects.tests.create`; also set `usesValidationDataset` / `usesTrainingDataset` / `usesMlModel`.
+- **Monitoring** tests run on live traces; set `evaluationWindow` / `delayWindow` (hours).
+
+### Reference columns by their canonical `openlayer_*` names
+
+When a threshold targets a column (`column_name` insight param, or a `subpopulationFilters`
+measurement), use the platform's canonical names — model output is **`openlayer_output`** (NOT the raw
+`outputColumnName`), plus `openlayer_latency` / `openlayer_num_of_tokens` / `openlayer_cost`. A wrong
+name makes the test silently **SKIPPED** ("column not in dataset"), which a "0 failing" summary hides.
+**After a push, check per-test status, not just totals.**
+
+## Catalog at a glance
+
+LLM quality (faithfulness, hallucination, coherence, toxicity, bias, answer correctness/relevancy,
+groundedness) · RAG (context recall/relevancy/utilization) · data quality (null/duplicate/dtype,
+column & feature drift) · statistical (F1, precision/recall, accuracy, AUC, MAE, RMSE) · session-level
+(cost, latency, tokens, goal/role/guideline adherence) · and the three below.
+
+## Three common subtypes (copy these shapes; confirm from the catalog page)
+
+**Metric threshold** (`metricThreshold`, `insightName: "metrics"`) — `measurement` is the metric key
+(e.g. `answerRelevancy`, `conciseness`); operator + numeric `value`.
+
+**LLM-as-a-judge** — https://docs.openlayer.com/tests/catalog/l-l-m-rubric-threshold.md
+`subtype: "llmRubricThresholdV2"`, `insightName: "llmRubricV2"`, `measurement: "criteria0MeanScore"`,
+with an `insightParameters` `criteria_list` of `{name, criteria, scoring}`. For a reliable judge, keep
+criteria binary/specific and validate it against a labeled set before trusting verdicts at scale.
+
+**SQL query** — https://docs.openlayer.com/tests/catalog/sql-query.md
+`subtype: "sqlQuery"`, `insightName: "sqlQuery"`, `measurement: "result"`; `insightParameters` `query`
+must reference the dataset as **`df`** and return a single number, e.g. `SELECT COUNT(*) FROM df`.
+
+Discover valid configs programmatically with the MCP `generate_test_config` tool when the Openlayer
+MCP is connected (covered in a separate skill).
+
+## Common Mistakes
+
+| Mistake | Problem | Fix |
+| ------- | ------- | --- |
+| Inventing a `subtype`/threshold shape | Won't sync or evaluate | Copy from the catalog page (`tests/catalog/<test>.md`) |
+| Targeting raw `output` instead of `openlayer_output` | Test silently SKIPPED | Use canonical `openlayer_*` column names |
+| Trusting "0 failing" totals | A skipped test isn't failing | Check per-test status after a push |
+| Wrong `type` for the metric | Misclassified test | Match `performance`/`integrity`/`consistency` to the catalog entry |
+| SQL test not selecting from `df` / returning many values | Test errors | Query `FROM df`, return one number |
+| Rubric test missing `criteria_list` params | Judge can't run | Provide the criteria per the catalog page |

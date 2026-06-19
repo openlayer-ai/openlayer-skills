@@ -77,6 +77,12 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 | ------------------------------------------------------- | ----------------------------------------- |
 | Add live tracing / observability to code               | `references/monitoring-instrumentation.md` |
 | Set up offline evals (`openlayer.json` / `tests.json`)  | `references/development-setup.md`          |
+| Create or choose tests / thresholds                     | `references/tests.md`                      |
+| Add runtime guardrails (block/redact PII, injection)    | `references/guardrails.md`                 |
+| Author a custom metric                                  | `references/custom-metrics.md`             |
+| Set up compliance frameworks / governance               | `references/governance.md`                 |
+| Route LLM calls through the Openlayer Gateway           | `references/gateway.md`                    |
+| Subscribe to platform events via webhooks               | `references/webhooks.md`                   |
 | Publish or stream inference rows directly               | `references/data-streaming.md`             |
 | Gate CI/CD on eval results                              | `references/ci-cd.md`                      |
 | Query data programmatically                             | `references/data-access.md`                |
