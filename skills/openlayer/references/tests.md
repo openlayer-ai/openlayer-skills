@@ -35,9 +35,19 @@ name makes the test silently **SKIPPED** ("column not in dataset"), which a "0 f
 ### Gotchas the catalog pages don't tell you (verified)
 
 - **`insightParameters` is never `null`.** The catalog prints `"insightParameters": null` for some tests,
-  but the API rejects null ("Field may not be null"). Use `[]` when the test takes no params, or **omit
-  the key entirely** for tests that don't accept it (e.g. `hasPromptInjectionCount`, `metricThreshold`).
-  When it does take params, use an array of `{name, value}`.
+  but the API rejects null ("Field may not be null"). When a test takes params, use an array of
+  `{name, value}`. When it takes none, **omit the key entirely** — for many subtypes (`hasPromptInjectionCount`,
+  `metricThreshold`, and the no-param drift/profile tests `labelDrift`/`driftedFeatureCount`/
+  `classImbalanceRatio`/`correlatedFeatureCount`) even `[]` is rejected ("Unknown field").
+- **Catalog values can be wrong/stale — they fail at sync.** Seen: `columnDrift` `test_type` must be
+  title-case **`"K-S Test"`** (catalog shows `"K-S test"`); `classImbalanceRatio` `operator` must be
+  `<` or `<=` (catalog shows `>`). Cross-check the operator/enum the backend accepts, not just the catalog text.
+- **Ground-truth metrics need a tabular task type.** accuracy/precision/recall/f1/falsePositiveRate/rocAuc
+  (classification) and mae/mse/rmse/r2 (regression) are `metricThreshold` (`usesMlModel: true`) and require
+  the dataset's `labelColumnName`/`targetColumnName` + predictions. Drift/profile tests
+  (`columnDrift`, `correlatedFeatureCount`, `classImbalanceRatio`) need a **training** dataset
+  (`usesTrainingDataset: true`). Prefer **explicit `columnDrift`** (with a `test_type`) — auto-method drift
+  (`labelDrift`/`driftedFeatureCount`) may silently SKIP on some backends.
 - **`type` drives `usesMlModel`.** `performance` tests require `usesMlModel: true` (even on a shell model);
   `integrity` / `consistency` tests use `usesMlModel: false`. A performance test with `false` is rejected
   ("Performance goals must use ML models...").
