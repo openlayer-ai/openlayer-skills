@@ -25,16 +25,22 @@ Docs (concepts): https://docs.openlayer.com/governance/overview.md and the per-t
 
 All endpoints take bearer `OPENLAYER_API_KEY` (workspace-scoped). Confirm payloads from the OpenAPI spec.
 
-- **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` · `GET|PUT|DELETE /frameworks/{id}`
-  (built-in frameworks can't be deleted) · `GET /frameworks/{id}/projects` ·
-  `GET /frameworks/{id}/project-rule-stats` (per-project compliance stats).
-- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector` (by project,
-  risk level, approval status, or task type).
-- **Rules:** `GET|POST /workspaces/{workspaceId}/rules` · `POST /workspaces/{workspaceId}/rules/batch`
-  (up to 50) · `GET|PUT|DELETE /rules/{id}` (built-in rules can't be deleted).
-- **Compliance status:** `GET /workspaces/{workspaceId}/rule-results` · `GET|PUT /rule-results/{id}`
-  (acknowledge / resolve).
-- **Evidence:** `GET|POST /rule-results/{id}/evidence` (upload a file/link/attestation to satisfy a rule).
+- **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` (create needs only `name`) ·
+  `GET|PUT|DELETE /frameworks/{id}` (only custom frameworks delete; built-ins are `immutable` with a
+  non-null `builtInSlug`) · `GET /frameworks/{id}/projects` · `GET /frameworks/{id}/project-rule-stats`.
+- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector` of shape
+  `{"match": [{"property": ..., "value": ...}]}` (criteria ANDed; `[]`/null = all projects). `property`
+  is a fixed enum: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `modelTypes`
+  (there is **no** `id` or `approvalStatus` — scope "by project" via `name`/`ownerId`).
+- **Rules:** `GET|POST /workspaces/{workspaceId}/rules` (create requires `name`, `scope`
+  [`workspace`|`project`], `type` [`evidence`|`platform`]) · `POST /workspaces/{workspaceId}/rules/batch`
+  (body is a **bare JSON array**, not `{items:[...]}`) · `GET|PUT|DELETE /rules/{id}`.
+- **Compliance status:** `GET /workspaces/{workspaceId}/rule-results` · `GET|PUT /rule-results/{id}`.
+- **Evidence:** `GET|POST /rule-results/{id}/evidence` — the required field depends on the rule's
+  `evidenceType`: document → `storageUri`, url → `url`, text → `text`. Posting valid evidence flips the
+  rule-result from `pending` to `passing`.
+
+Bearer `OPENLAYER_API_KEY` is sufficient for all of the above (no cookie/admin auth needed).
 
 Typical flow: create/activate a framework → scope it to projects → rules generate `rule-results` per
 project → satisfy platform rules by doing the work, upload evidence for evidence-based rules → read
@@ -53,6 +59,10 @@ a byproduct of the integration work — then read `rule-results` to confirm it f
 | ------- | ------- | --- |
 | Assuming governance is UI-only | Misses automation | There is a full REST API (frameworks/rules/rule-results/evidence) |
 | Activating a framework but not scoping it to projects | No checklist appears | Set `enabled` + a `projectSelector` on the framework |
+| `projectSelector` using `id` or `approvalStatus` | Matches nothing silently | Use the property enum: `name`/`ownerId`/`taskType`/`riskLevel`/`riskTotalScore`/`modelTypes` |
+| `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
+| Rule create with only `name` | 400 (scope/type required) | Include `scope` and `type` |
+| Evidence POST with the wrong field | 400 (field required) | Match the rule's `evidenceType`: `storageUri`/`url`/`text` |
 | Confusing the two rule types | Wrong expectation | Platform rules auto-satisfy via usage; evidence rules need uploads |
 | Trying to `DELETE` a built-in framework/rule | Rejected | Only custom frameworks/rules are deletable |
 | Treating platform rules as manual config | Wasted effort | Do the monitoring/testing work; the rule-result flips automatically |
