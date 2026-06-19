@@ -29,9 +29,18 @@ Five sections: `taskType` (required), `model` (required), `datasets` (required),
 - `model.modelType`: `"shell"` (you provide precomputed outputs in the dataset — simplest, no runtime)
   or `"full"` (Openlayer runs your code: `runtime`, `installCommand`, `batchCommand` with `{{ path }}`
   and `{{ name }}` placeholders, `outputDirectory`).
-- `datasets[]`: each needs `name`, `label` (`"validation"` or `"training"`), `path`, optional
-  `groundTruthColumnName`. Task-specific: `llm-base` → `inputVariableNames`; classification →
-  `classNames`; tabular → `featureNames`. **Dataset column names must match what the config declares.**
+- `datasets[]`: each needs `name`, `label`, `path`, optional `groundTruthColumnName`. The non-validation
+  `label` is task-type-specific: **`fine-tuning`** for `llm-base`, **`training`** for tabular tasks
+  (the validator rejects the wrong one). Task-specific fields: `llm-base` → `inputVariableNames`
+  (+ `contextColumnName`/`questionColumnName` for RAG); classification → `featureNames` +
+  `categoricalFeatureNames` + `classNames` + `labelColumnName` + `predictionsColumnName` +
+  `predictionScoresColumnName` (scores are **per-class lists**, not a scalar); regression → `featureNames` +
+  `targetColumnName` + `predictionsColumnName`. **Dataset column names must match what the config declares.**
+- **Tabular trap (undocumented):** for tabular tasks, `featureNames` / `categoricalFeatureNames` /
+  `classNames` must ALSO be set on the top-level **`model`** object, not only per-dataset. If they're only
+  in datasets, `openlayer validate` passes locally but the **server fails the commit** with an opaque
+  "Something went wrong" error. (`predictionsColumnName`/`predictionScoresColumnName` are likewise absent
+  from the public `openlayer.json` doc but required for classification metrics like rocAuc.)
 
 ### 3. Author `tests.json`
 
