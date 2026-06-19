@@ -1,0 +1,23 @@
+{
+  "name": "openlayer",
+  "displayName": "Openlayer",
+  "version": "0.1.0",
+  "description": "Skills for working with Openlayer — the AI evaluation and observability platform for tracing/monitoring, offline testing, evals, and CI/CD gates.",
+  "author": {
+    "name": "Openlayer",
+    "email": "support@openlayer.com"
+  },
+  "homepage": "https://openlayer.com",
+  "repository": "https://github.com/openlayer-ai/openlayer-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "openlayer",
+    "llm",
+    "observability",
+    "tracing",
+    "evaluation",
+    "testing"
+  ],
+  "category": "developer-tools",
+  "skills": "./skills/"
+}

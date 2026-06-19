@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "openlayer",
+  "version": "0.1.0",
+  "description": "Openlayer agent skills marketplace — teach AI coding agents to integrate apps with Openlayer.",
+  "owner": {
+    "name": "Openlayer",
+    "email": "support@openlayer.com"
+  },
+  "plugins": [
+    {
+      "name": "openlayer",
+      "description": "Skill for integrating, instrumenting, evaluating, and testing apps with Openlayer (tracing/monitoring, offline tests, CI/CD eval gates).",
+      "source": ".",
+      "category": "developer-tools"
+    }
+  ]
+}
