@@ -36,6 +36,22 @@ Create programmatically via the SDK (`client.projects.tests.create(...)`) / REST
 exact payload from the docs or `generate_test_config`. Some tests (e.g. LLM-rubric) require specific
 `insightParameters` (like the rubric text).
 
+### Reference columns by their canonical `openlayer_*` names
+
+When a test/threshold targets a column (e.g. a `column_name` insight parameter, or a
+`subpopulationFilters` measurement), use the platform's **canonical column names, not the raw dataset
+header**. The engine exposes:
+
+- **`openlayer_output`** — the model output (this is what `outputColumnName` becomes; do NOT use the
+  raw output header like `"output"`).
+- `openlayer_latency`, `openlayer_num_of_tokens`, `openlayer_cost`, `openlayer_timestamp`, etc.
+- Input variables and ground truth keep the names you declared (e.g. `input_data`, `ground_truth`).
+
+A test that references a column the dataset doesn't expose is **silently SKIPPED** (not failed) with
+`"The column '<name>' is not in the validation dataset."` — so a green "0 failing" summary can hide a
+skipped test. **After a push, check per-test status, not just the pass/fail totals** — a `skipped`
+test usually means a wrong `column_name` (use `openlayer_output`, not `output`).
+
 ## Tests vs guardrails
 
 - **Test** = scored evaluation over data; surfaces pass/fail, trends, alerts. Use for quality/regression.
@@ -50,6 +66,8 @@ exact payload from the docs or `generate_test_config`. Some tests (e.g. LLM-rubr
 | Inventing a `subtype` or threshold shape | Test won't sync/evaluate | Copy from the catalog page or use `generate_test_config` |
 | Wrong `type` for the metric | Test misclassified / unexpected behavior | Match `performance` vs `integrity` vs `consistency` to the catalog entry |
 | Rubric/LLM tests missing `insightParameters` | Test can't run | Provide required params (e.g. the rubric) per the catalog page |
+| Targeting the raw output header (`column_name: "output"`) | Test silently SKIPPED ("column not in dataset") | Use the canonical `openlayer_output` (and `openlayer_*` for latency/tokens/cost) |
+| Trusting the "0 failing" summary | A skipped test isn't failing — totals hide it | Check per-test status after a push; investigate any `skipped` |
 | Mismatched `operator`/`value` types | Threshold never triggers correctly | Use the operator+value the catalog example shows (`is` for categorical, comparison for numeric) |
 | Building a guardrail when you only need observation | Unnecessary runtime risk/latency | Use a monitoring test instead; reserve guardrails for blocking |
 | Assuming a guardrail blocks when it only logs | Bad outputs still returned | Configure the guardrail's action explicitly per the docs |

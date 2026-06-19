@@ -45,6 +45,10 @@ optional `insightParameters`.
 page (`https://docs.openlayer.com/tests/catalog/<test>.md`) or generate one with the MCP tool
 `generate_test_config`. See `references/tests-and-guardrails.md`.
 
+When a test targets the model output, reference it as **`openlayer_output`** (the canonical name), not
+the raw `outputColumnName` value — a wrong column name makes the test silently **SKIPPED**, not failed.
+After the push, check per-test status, not just pass/fail totals. See `references/tests-and-guardrails.md`.
+
 ### 4. Validate, then push
 
 ```bash
