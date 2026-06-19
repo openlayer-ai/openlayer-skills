@@ -31,6 +31,8 @@ Five sections: `taskType` (required), `model` (required), `datasets` (required),
   and `{{ name }}` placeholders, `outputDirectory`).
 - `datasets[]`: each needs `name`, `label`, `path`. The non-validation `label` is task-type-specific:
   **`fine-tuning`** for `llm-base`, **`training`** for tabular tasks (the validator rejects the wrong one).
+  Your eval dataset uses `label: "validation"`; only a *second* (training/reference) dataset uses
+  `fine-tuning` (llm-base) or `training` (tabular). A single eval dataset should be `validation`.
   Task-specific fields:
   - **`llm-base`**: `inputVariableNames`; for a **`shell`** model also **`outputColumnName`** (the column
     holding precomputed outputs) — without it, every output-dependent test silently SKIPS/ERRORS even
