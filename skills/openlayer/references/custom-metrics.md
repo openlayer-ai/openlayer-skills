@@ -51,6 +51,12 @@ lowerBound, upperBound, storageUri}` — the server **auto-detects** that it's c
 is read-only and set server-side). Don't send `custom` yourself, or you'll get
 `Property is read-only - 'metricSettings.0.custom'`.
 
+> **Known CLI bug (verified):** current `openlayer metrics push` bundles + uploads fine but then
+> **fails registration** with exactly that `metricSettings.0.custom` error, because it round-trips the
+> read-only field. Until it's fixed, register via the **direct API** instead: `PUT /projects/{id}/metric-settings`
+> with the body above and **no `custom`** (returns 200; the server sets `custom: true`). Remove a metric
+> with `DELETE /projects/{id}/metric-settings?key=<key>`.
+
 ## 3. Use it in a test
 
 Reference the registered metric key from a test threshold (a `metricThreshold`-style test with the
