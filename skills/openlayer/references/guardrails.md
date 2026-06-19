@@ -16,11 +16,14 @@ Docs: https://docs.openlayer.com/guardrails/overview.md
 Separate package (NOT `openlayer.lib.guardrails`):
 
 ```bash
-pip install "openlayer-guardrails[pii]"            # extras: [pii], [prompt-injection]
+pip install "openlayer-guardrails[pii]"            # extras: [pii], [prompt-injection], [toxicity]
 ```
 
-Built-in classes (import from `openlayer_guardrails`): `PIIGuardrail`, `PromptInjectionGuardrail`,
-`ToxicityENGuardrail`, `ToxicityPTGuardrail`. Two ways to use:
+Built-in classes (import from `openlayer_guardrails`): `PIIGuardrail` (entity-based: `block_entities` /
+`redact_entities`), and the threshold-based `PromptInjectionGuardrail`, `ToxicityENGuardrail`,
+`ToxicityPTGuardrail` (`confidence_threshold` / `threshold`, no entity sets) which need
+`[prompt-injection]` / `[toxicity]` (torch + transformers — large; they raise a clear `ImportError`
+naming the extra if missing). Two ways to use:
 
 ```python
 from openlayer_guardrails import PIIGuardrail
@@ -33,11 +36,20 @@ def handle(user_input: str) -> str:
     ...
 ```
 
-Standalone (no platform): construct with `block_entities` / `redact_entities` sets (+ optional
-`confidence_threshold`, `block_strategy`, `block_message`) and call `check_input(...)` /
-`check_output(...)`. They return a `GuardrailResult` with `action` (`GuardrailAction.MODIFY` /
-`BLOCK` / pass), `modified_data` (redacted text), `reason`, and `metadata` (detected/blocked/redacted
-entities). Block mode can raise `GuardrailBlockedException`.
+Standalone (no platform): call `check_input(inputs)` / `check_output(output, inputs)` — both take a
+**dict** of inputs (not a bare string; `check_output` needs both args). They return a `GuardrailResult`
+with `action` (`GuardrailAction.MODIFY` / `BLOCK` / `ALLOW`), `modified_data` (redacted text, or `None`
+when blocked), `reason`, `metadata` (detected/blocked/redacted entities), `block_strategy`, `error_message`.
+
+**Block does NOT raise by default.** Behavior is set by `block_strategy` (4 options): the default
+`RETURN_ERROR_MESSAGE` substitutes inputs/output with `block_message` and lets the function run;
+`RAISE_EXCEPTION` raises `GuardrailBlockedException`; `RETURN_EMPTY` / `SKIP_FUNCTION` blank or skip. So
+to actually stop a request in a `@trace` path, construct the guard with
+`block_strategy=BlockStrategy.RAISE_EXCEPTION`.
+
+On a guarded trace, the published row carries `has_guardrails: true`, top-level
+`guardrail_allowed`/`blocked`/`modified` flags, and a root-step `metadata.guardrails` map keyed
+`input_<name>` / `output_<name>` with each check's action + reason + entity metadata.
 
 > Install note: the `[pii]` extra pulls Presidio, and `PIIGuardrail` auto-downloads a spaCy model
 > (`en_core_web_lg`) on first construction. On a clean environment you may also need `click` (a spaCy
@@ -62,6 +74,7 @@ responses** — tokens reach the user before the check.
 | `pip install openlayer` / importing `openlayer.lib.guardrails` | Wrong package | Install `openlayer-guardrails` with the right extra; import from `openlayer_guardrails` |
 | Missing the extra (`[pii]` / `[prompt-injection]` / `[toxicity]`) | Runtime failure | Install the extra the guardrail needs |
 | `[pii]` installed but PIIGuardrail still errors ("Presidio is required") | spaCy import chain incomplete on a clean env | Ensure `click` is present; the spaCy model auto-downloads on first construction (allow network) |
-| Expecting a guardrail to "just log" when it's set to block | Requests rejected unexpectedly | Pick the action (block vs redact vs log) deliberately |
+| Expecting a block guardrail to raise/stop by default | Default `block_strategy` substitutes inputs and the function still runs | Set `block_strategy=BlockStrategy.RAISE_EXCEPTION` to actually halt |
+| Calling `check_input("text")` / `check_output("text")` | They take an inputs **dict** (output check needs both args) | `check_input({...})` / `check_output(output, {...})` |
 | Relying on output guardrails with streaming | Unsafe tokens already sent | Don't stream when an output guardrail must hold, or guard at input |
 | Using a guardrail where a monitoring test suffices | Needless latency | Reserve guardrails for prevention; observe with tests |
