@@ -32,6 +32,21 @@ measurement), use the platform's canonical names — model output is **`openlaye
 name makes the test silently **SKIPPED** ("column not in dataset"), which a "0 failing" summary hides.
 **After a push, check per-test status, not just totals.**
 
+### Gotchas the catalog pages don't tell you (verified)
+
+- **`insightParameters` is never `null`.** The catalog prints `"insightParameters": null` for some tests,
+  but the API rejects null ("Field may not be null"). Use `[]` when the test takes no params, or **omit
+  the key entirely** for tests that don't accept it (e.g. `hasPromptInjectionCount`, `metricThreshold`).
+  When it does take params, use an array of `{name, value}`.
+- **`type` drives `usesMlModel`.** `performance` tests require `usesMlModel: true` (even on a shell model);
+  `integrity` / `consistency` tests use `usesMlModel: false`. A performance test with `false` is rejected
+  ("Performance goals must use ML models...").
+- **Not every catalog test supports every task type.** Many are tabular-only (`emptyFeature`,
+  `dtypeValidation`, `featuresMissingValues`) or are rejected for `llm-base` despite the catalog listing
+  it. The backend rejects an unsupported subtype×task at sync.
+- **A single bad test fails the WHOLE push at sync** (Total Tests = 0) — you only get per-test status once
+  sync passes. So fix sync-time rejections first, *then* read per-test pass/fail/skip.
+
 ## Catalog at a glance
 
 LLM quality (faithfulness, hallucination, coherence, toxicity, bias, answer correctness/relevancy,
