@@ -51,9 +51,12 @@ Five sections: `taskType` (required), `model` (required), `datasets` (required),
 
 An array of Test objects. Each: `name`, `type` (`integrity` | `consistency` | `performance`),
 `subtype` (the platform's test id), `mode: "development"`, `thresholds[]`, and `syncId` (a UUID).
-Development-mode tests also set `usesValidationDataset` / `usesTrainingDataset` / `usesMlModel`.
-Threshold fields: `insightName`, `measurement`, `operator` (`is`, `>`, `>=`, `<`, `<=`), `value`,
-optional `insightParameters`.
+Development-mode tests must include **all three** of `usesValidationDataset`, `usesTrainingDataset`,
+`usesMlModel` — they're each required even when false (omitting one fails sync with
+`'<flag>': ['Missing data for required field.']`). Typical: `usesValidationDataset: true`,
+`usesTrainingDataset: false` (true only for drift/consistency), `usesMlModel: true` for `performance`
+tests / `false` for `integrity`. Threshold fields: `insightName`, `measurement`, `operator`
+(`is`, `>`, `>=`, `<`, `<=`), `value`, optional `insightParameters`.
 
 **Do not invent `subtype`/threshold shapes.** Copy a working example from the relevant test catalog
 page (`https://docs.openlayer.com/tests/catalog/<test>.md`).
