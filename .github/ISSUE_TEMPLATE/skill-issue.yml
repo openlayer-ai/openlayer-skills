@@ -1,0 +1,29 @@
+name: Skill issue or improvement
+description: Report wrong/outdated guidance in the Openlayer skill, or suggest an improvement.
+labels: []
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - The skill gave wrong or outdated guidance
+        - A workflow did not produce the expected result
+        - Missing coverage / new use case
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: reference
+    attributes:
+      label: Which skill / reference?
+      description: e.g. skills/openlayer/references/monitoring-instrumentation.md
+    validations:
+      required: false
+  - type: textarea
+    id: detail
+    attributes:
+      label: What happened vs. what you expected
+      description: Include the docs.openlayer.com page that contradicts the skill, if any — it makes the fix verifiable.
+    validations:
+      required: true

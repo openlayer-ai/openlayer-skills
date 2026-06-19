@@ -1,0 +1,5 @@
+# Require maintainer review for CI / repo configuration changes
+.github/        @openlayer-ai/admins
+scripts/        @openlayer-ai/admins
+.claude-plugin/ @openlayer-ai/admins
+.cursor-plugin/ @openlayer-ai/admins
