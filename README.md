@@ -1,6 +1,6 @@
 # Openlayer Skills
 
-[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, etc.) how to integrate apps with [Openlayer](https://openlayer.com) — the AI evaluation and observability platform — correctly and fast.
+[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, etc.) how to integrate apps with [Openlayer](https://openlayer.com) — the AI evaluation and observability platform.
 
 Coding agents produce significantly better results with the skill installed, because they are conditioned to follow Openlayer's current best practices instead of guessing from memory (outdated SDK calls, wrong env vars, invented test configs).
 
