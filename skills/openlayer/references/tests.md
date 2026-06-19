@@ -68,6 +68,28 @@ criteria binary/specific and validate it against a labeled set before trusting v
 `subtype: "sqlQuery"`, `insightName: "sqlQuery"`, `measurement: "result"`; `insightParameters` `query`
 must reference the dataset as **`df`** and return a single number, e.g. `SELECT COUNT(*) FROM df`.
 
+### LLM-quality / RAGAS metrics (verified)
+
+The LLM/RAG quality metrics are all **`metricThreshold`** (`type: performance`, `usesMlModel: true`,
+`insightName: "metrics"`) with `measurement` set to one of the **only valid keys**:
+`faithfulness, answerCorrectness, answerRelevancy, contextRecall, contextRelevancy, contextUtilization,
+hallucination, coherence, conciseness, correctness, harmfulness, maliciousness`. Example:
+
+```json
+{ "name": "Faithful to context", "type": "performance", "subtype": "metricThreshold",
+  "mode": "development", "usesValidationDataset": true, "usesMlModel": true, "syncId": "<uuid>",
+  "thresholds": [{ "insightName": "metrics", "measurement": "faithfulness", "operator": ">", "value": 0.9 }] }
+```
+
+- **Bias** is a separate subtype: `llmBiasThreshold` (`insightName: "llmBias"`, `measurement: "biasMeanScore"`).
+- **`toxicity` and `groundedness` are NOT valid `metricThreshold` measurements** — catalog pages exist but
+  there's no such goal; using them fails the whole push at sync. Check those via an `llmRubricThresholdV2`
+  criterion instead.
+- **RAG metrics need column mappings** the public `openlayer.json` doc omits: set `contextColumnName`
+  (and `questionColumnName`) on the dataset, or context-dependent metrics (faithfulness, hallucination,
+  contextRecall/Relevancy/Utilization) can't compute. These judges read the configured output
+  automatically — no `openlayer_output` column param needed.
+
 Discover valid configs programmatically with the MCP `generate_test_config` tool when the Openlayer
 MCP is connected (covered in a separate skill).
 
