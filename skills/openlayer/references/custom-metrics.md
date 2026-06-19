@@ -14,16 +14,28 @@ Docs: https://docs.openlayer.com/tests/custom-metrics.md and the CLI command htt
 
 ```
 my_metric/
-├── run.py            # defines a Metric(BaseMetric) with compute_on_dataset()
-├── requirements.txt  # must include openlayer (e.g. openlayer>=0.2.0a26)
-└── config.json       # display name, description, lowerBound/upperBound, install/run commands, optional params
+├── run.py            # Metric(metrics.BaseMetric) with compute_on_dataset(); ends with Metric().run()
+├── requirements.txt  # must include openlayer
+└── config.json       # installCommand, runCommand, name, description, lowerBound, upperBound (+ optional params)
 ```
 
-`run.py` implements `compute_on_dataset(self, dataset) -> MetricReturn` (returns a score, unit,
-metadata, optional added columns). Compute fresh per call — don't stash mutable state on the instance.
-Configurable parameters declared in `config.json` are read at runtime from an auto-generated
-`params.json`, so behavior can change without editing code. Confirm the exact `BaseMetric` /
-`MetricReturn` shapes from the docs.
+`run.py` (shape — confirm against the docs):
+
+```python
+from openlayer.lib.core import metrics
+
+class Metric(metrics.BaseMetric):
+    def compute_on_dataset(self, dataset: metrics.Dataset) -> metrics.MetricReturn:
+        # dataset.df is a pandas DataFrame; compute fresh (no mutable instance state)
+        return metrics.MetricReturn(value=..., unit=None, meta=None, added_cols=set())
+
+if __name__ == "__main__":   # REQUIRED — the CLI invokes the metric this way
+    Metric().run()
+```
+
+Note the field names: `MetricReturn(value=, unit=, meta=, added_cols=)` (it's `value`/`meta`, not
+`score`/`metadata`). Optional configurable parameters declared in `config.json` are read at runtime
+from an auto-generated `params.json`, so behavior changes without editing code.
 
 ## 2. Push / run with the CLI
 
@@ -46,7 +58,9 @@ metric's key as the `measurement`). See `references/tests.md`; for the test work
 
 | Mistake | Problem | Fix |
 | ------- | ------- | --- |
-| `requirements.txt` missing `openlayer` | Metric won't run on the platform | Pin `openlayer>=…` per the docs |
+| `requirements.txt` missing `openlayer` | Metric won't run on the platform | Include `openlayer` |
+| Omitting `if __name__ == "__main__": Metric().run()` | CLI can't execute the metric | Keep the `__main__` block that calls `Metric().run()` |
+| Returning `score=`/`metadata=` to `MetricReturn` | Wrong field names | Use `value=` and `meta=` |
 | No `lowerBound`/`upperBound` in `config.json` | Score range undefined | Set the bounds |
 | Mutable state on the `Metric` instance | Nondeterministic scores | Compute fresh inside `compute_on_dataset` |
 | Wrong `-d` directory | Pushes nothing / wrong metric | Point `-d` at the metric dir (default `metrics`) |

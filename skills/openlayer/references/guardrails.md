@@ -19,21 +19,29 @@ Separate package (NOT `openlayer.lib.guardrails`):
 pip install "openlayer-guardrails[pii]"            # extras: [pii], [prompt-injection]
 ```
 
-Built-in classes: `PIIGuardrail`, `PromptInjectionGuardrail` (import from `openlayer_guardrails`). Two ways to use:
+Built-in classes (import from `openlayer_guardrails`): `PIIGuardrail`, `PromptInjectionGuardrail`,
+`ToxicityENGuardrail`, `ToxicityPTGuardrail`. Two ways to use:
 
 ```python
 from openlayer_guardrails import PIIGuardrail
-from openlayer.lib.tracing import trace
+from openlayer.lib import trace                 # (openlayer.lib.tracing.trace also works)
 
-pii_guard = PIIGuardrail()
+pii_guard = PIIGuardrail(redact_entities={"EMAIL_ADDRESS", "PHONE_NUMBER"})
 
-@trace(guardrails=[pii_guard])          # monitored on the Openlayer platform
+@trace(guardrails=[pii_guard])                   # monitored on the Openlayer platform
 def handle(user_input: str) -> str:
     ...
 ```
 
-Standalone (no platform): instantiate with `block_entities` / `redact_entities` sets and call
-`check_input(...)` / check methods yourself. Confirm the exact signatures from the docs — don't guess.
+Standalone (no platform): construct with `block_entities` / `redact_entities` sets (+ optional
+`confidence_threshold`, `block_strategy`, `block_message`) and call `check_input(...)` /
+`check_output(...)`. They return a `GuardrailResult` with `action` (`GuardrailAction.MODIFY` /
+`BLOCK` / pass), `modified_data` (redacted text), `reason`, and `metadata` (detected/blocked/redacted
+entities). Block mode can raise `GuardrailBlockedException`.
+
+> Install note: the `[pii]` extra pulls Presidio, and `PIIGuardrail` auto-downloads a spaCy model
+> (`en_core_web_lg`) on first construction. On a clean environment you may also need `click` (a spaCy
+> transitive dep). `[prompt-injection]` / `[toxicity]` pull `torch` + `transformers` (large).
 
 ## Option B — at the Gateway (no app code)
 
@@ -52,7 +60,8 @@ responses** — tokens reach the user before the check.
 | Mistake | Problem | Fix |
 | ------- | ------- | --- |
 | `pip install openlayer` / importing `openlayer.lib.guardrails` | Wrong package | Install `openlayer-guardrails` with the right extra; import from `openlayer_guardrails` |
-| Missing the extra (`[pii]` / `[prompt-injection]`) | Runtime failure | Install the extra the guardrail needs |
+| Missing the extra (`[pii]` / `[prompt-injection]` / `[toxicity]`) | Runtime failure | Install the extra the guardrail needs |
+| `[pii]` installed but PIIGuardrail still errors ("Presidio is required") | spaCy import chain incomplete on a clean env | Ensure `click` is present; the spaCy model auto-downloads on first construction (allow network) |
 | Expecting a guardrail to "just log" when it's set to block | Requests rejected unexpectedly | Pick the action (block vs redact vs log) deliberately |
 | Relying on output guardrails with streaming | Unsafe tokens already sent | Don't stream when an output guardrail must hold, or guard at input |
 | Using a guardrail where a monitoring test suffices | Needless latency | Reserve guardrails for prevention; observe with tests |
