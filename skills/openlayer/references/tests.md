@@ -71,12 +71,17 @@ column & feature drift) · statistical (F1, precision/recall, accuracy, AUC, MAE
 
 **LLM-as-a-judge** — https://docs.openlayer.com/tests/catalog/l-l-m-rubric-threshold.md
 `subtype: "llmRubricThresholdV2"`, `insightName: "llmRubricV2"`, `measurement: "criteria0MeanScore"`,
-with an `insightParameters` `criteria_list` of `{name, criteria, scoring}`. For a reliable judge, keep
-criteria binary/specific and validate it against a labeled set before trusting verdicts at scale.
+with an `insightParameters` `criteria_list` of `{name, criteria, scoring}`. It's a **`performance`** test
+→ set **`usesMlModel: true`** (the catalog example shows `false`, which the backend rejects). For a
+reliable judge, keep criteria binary/specific and validate against a labeled set before trusting verdicts.
 
 **SQL query** — https://docs.openlayer.com/tests/catalog/sql-query.md
 `subtype: "sqlQuery"`, `insightName: "sqlQuery"`, `measurement: "result"`; `insightParameters` `query`
 must reference the dataset as **`df`** and return a single number, e.g. `SELECT COUNT(*) FROM df`.
+
+**Contains-PII** — `subtype: "containsPii"`, `measurement: "containsPIIRowCount"`. Requires **both**
+`insightParameters` (exactly 2): `pii_type` (a list, e.g. `["EMAIL_ADDRESS","PHONE_NUMBER"]`) **and**
+`column_name` (e.g. `openlayer_output`). Supplying only one fails sync with "Length must be 2".
 
 ### LLM-quality / RAGAS metrics (verified)
 
