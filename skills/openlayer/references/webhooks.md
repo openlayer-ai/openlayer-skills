@@ -12,11 +12,14 @@ Docs: https://docs.openlayer.com/security/webhooks/overview.md , /manage-webhook
 
 ## Create / manage
 
+Webhooks are gated by a feature flag — the deployment must have `ENABLE_WEBHOOKS` enabled. All endpoints
+require **workspace-admin** auth.
+
 - **UI:** Workspace settings → Webhooks → endpoint URL + event types. The **signing secret is shown
   once** — store it immediately (it can't be retrieved later).
-- **REST** (bearer auth, workspace admin): `POST /v1/workspaces/{workspaceId}/webhooks` with `url` +
-  `eventTypes[]`; `GET`/`PUT`/`DELETE` to list/update/remove; `GET …/webhooks/{id}/deliveries` for the
-  delivery log (90-day retention).
+- **REST** (workspace-admin **session/cookie** auth — not an API key): `POST /v1/workspaces/{workspaceId}/webhooks`
+  with `url` + `eventTypes[]`; `GET`/`PUT`/`DELETE` to list/update/remove; `GET …/webhooks/{id}/deliveries`
+  for the delivery log (90-day retention).
 
 ## Event types
 

@@ -46,7 +46,10 @@ openlayer metrics pull                  # fetch existing metrics into the workin
 ```
 
 The CLI reads `OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` from env (see `references/cli.md`), so push
-runs headless.
+runs headless. Registration calls `PUT /projects/{id}/metric-settings` with `{key, name, description,
+lowerBound, upperBound, storageUri}` — the server **auto-detects** that it's custom (the `custom` field
+is read-only and set server-side). Don't send `custom` yourself, or you'll get
+`Property is read-only - 'metricSettings.0.custom'`.
 
 ## 3. Use it in a test
 
