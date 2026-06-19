@@ -23,9 +23,14 @@ require **workspace-admin** auth.
 
 ## Event types
 
-`test.created`, `test.updated`, `test.deleted`, and `tests.result.updated` (a test suite finished —
-includes total/passing/failing/skipped/running counts, projectId, inferencePipelineId). Envelope:
-`{ "type": ..., "timestamp": ..., "data": {...} }`.
+`test.created`, `test.updated`, `test.deleted`, and `tests.result.updated` (a test suite finished).
+Envelope: `{ "type": ..., "timestamp": ..., "data": {...} }`. For `tests.result.updated`, the counts and
+ids are nested under **`data.tests`**: `{ total, passing, failing, skipped, running, projectId,
+projectVersionId, inferencePipelineId }` (verified).
+
+> The endpoint **URL must be HTTPS for delivery.** A plain `http://` URL is *accepted at subscription
+> creation* but the delivery worker refuses it ("Refusing to deliver to non-HTTPS URL"), so deliveries
+> fail. Register an HTTPS endpoint.
 
 ## Verify the signature (always)
 
