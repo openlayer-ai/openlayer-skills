@@ -37,9 +37,31 @@ def handle(user_input: str) -> str:
 ```
 
 Standalone (no platform): call `check_input(inputs)` / `check_output(output, inputs)` — both take a
-**dict** of inputs (not a bare string; `check_output` needs both args). They return a `GuardrailResult`
-with `action` (`GuardrailAction.MODIFY` / `BLOCK` / `ALLOW`), `modified_data` (redacted text, or `None`
-when blocked), `reason`, `metadata` (detected/blocked/redacted entities), `block_strategy`, `error_message`.
+**dict** of inputs (not a bare string; `check_output` needs both args). They **return a `GuardrailResult`
+and never raise or substitute on their own** — `block_strategy` is acted on only by the `@trace` wrapper.
+In standalone you enforce the verdict yourself:
+
+```python
+from openlayer_guardrails import (
+    PIIGuardrail, BlockStrategy, GuardrailAction, GuardrailBlockedException,
+)
+
+# Hard block: check_input returns BLOCK but does NOT raise — you raise it.
+block_guard = PIIGuardrail(block_entities={"EMAIL_ADDRESS"},          # reliably-detected entity
+                           block_strategy=BlockStrategy.RAISE_EXCEPTION)
+res = block_guard.check_input({"user_message": text})
+if res.action == GuardrailAction.BLOCK:
+    raise GuardrailBlockedException(guardrail_name=block_guard.name,
+                                    reason=res.reason, metadata=res.metadata)
+
+# Redact: substitute the cleaned text yourself from modified_data.
+redact_guard = PIIGuardrail(redact_entities={"EMAIL_ADDRESS"})
+out = redact_guard.check_output(model_output, {"user_message": text})
+safe = out.modified_data if out.action == GuardrailAction.MODIFY else model_output
+```
+
+`GuardrailResult` fields: `action` (`MODIFY`/`BLOCK`/`ALLOW`), `modified_data` (redacted text, `None` when
+blocked), `reason`, `metadata` (detected/blocked/redacted entities), `block_strategy`, `error_message`.
 
 **Block does NOT raise by default.** Behavior is set by `block_strategy` (4 options): the default
 `RETURN_ERROR_MESSAGE` substitutes inputs/output with `block_message` and lets the function run;
@@ -74,7 +96,8 @@ responses** — tokens reach the user before the check.
 | `pip install openlayer` / importing `openlayer.lib.guardrails` | Wrong package | Install `openlayer-guardrails` with the right extra; import from `openlayer_guardrails` |
 | Missing the extra (`[pii]` / `[prompt-injection]` / `[toxicity]`) | Runtime failure | Install the extra the guardrail needs |
 | `[pii]` installed but PIIGuardrail still errors ("Presidio is required") | spaCy import chain incomplete on a clean env | Ensure `click` is present; the spaCy model auto-downloads on first construction (allow network) |
-| Expecting a block guardrail to raise/stop by default | Default `block_strategy` substitutes inputs and the function still runs | Set `block_strategy=BlockStrategy.RAISE_EXCEPTION` to actually halt |
+| Expecting a block guardrail to raise/stop by default | Default `block_strategy` substitutes inputs and the function still runs | Set `block_strategy=BlockStrategy.RAISE_EXCEPTION` (effective in the `@trace` path; in standalone, act on `result.action` yourself) |
+| Assuming every PII entity is detected | Presidio recognizers are confidence-based; some entities/formats (e.g. `US_SSN`, bare local phone numbers) fall below the threshold and pass through | Verify detection for your entity set; lean on well-supported entities (`EMAIL_ADDRESS`, `CREDIT_CARD`, `IP_ADDRESS`) or tune `confidence_threshold` |
 | Calling `check_input("text")` / `check_output("text")` | They take an inputs **dict** (output check needs both args) | `check_input({...})` / `check_output(output, {...})` |
 | Relying on output guardrails with streaming | Unsafe tokens already sent | Don't stream when an output guardrail must hold, or guard at input |
 | Using a guardrail where a monitoring test suffices | Needless latency | Reserve guardrails for prevention; observe with tests |

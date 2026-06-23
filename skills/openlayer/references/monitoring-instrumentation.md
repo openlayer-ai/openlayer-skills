@@ -50,8 +50,30 @@ up a request with `@trace()` (or `@trace_async()` for async). Available wrappers
 plus a LangChain callback handler. Confirm the exact import and call from the docs above — do not
 guess provider-specific signatures.
 
-For frameworks without a wrapper, decorate your own functions with `@trace()`; nested decorated calls
-become child steps automatically.
+For frameworks without a wrapper, decorate your own functions with `@trace()`. Nesting follows the
+**call stack**: a decorated function becomes a child step only when it is called from *inside* another
+decorated function — calling two decorated functions side-by-side from an undecorated parent yields two
+separate (sibling) root traces, not one nested trace.
+
+```python
+from openlayer.lib import trace
+from openlayer.lib.tracing import log_context, log_question   # explicit logging (NOT re-exported from openlayer.lib)
+
+@trace()                                              # child step (called inside answer → nested)
+def retrieve(question: str) -> list[str]:
+    return vector_search(question)
+
+@trace()                                              # root step
+def answer(question: str) -> str:
+    context = retrieve(question)                      # nested child of answer
+    log_question(question); log_context(context)      # populate the question/context columns
+    return llm(question, context)
+```
+
+`context_kwarg`/`question_kwarg` are an alternative to `log_context`/`log_question`, but they read from
+the decorated function's **own declared parameters** — `@trace(context_kwarg="context")` errors with
+`Context kwarg 'context' not found in inputs` unless `context` is a parameter of that function. When the
+step *computes* its context internally (as above), call `log_context()`/`log_question()` instead.
 
 ### 4. Run once, then verify a trace lands BEFORE adding more
 
@@ -65,7 +87,7 @@ before confirming the first one publishes — most failures are "configured but 
 | ----------------------------------------- | ---------------------------- | --- | ---- |
 | Conversation history / chat endpoints     | user/session context         | `set_user_session_context(user_id=…, session_id=…)` → lands as `openlayer_user_id` / `openlayer_session_id` | https://docs.openlayer.com/monitoring/sessions-and-users.md |
 | Retrieval / RAG                           | context (+ question)         | `@trace(context_kwarg="…", question_kwarg="…")` on the **root** fn — they resolve from its **input args** (NOT `update_current_trace`) | https://docs.openlayer.com/monitoring/context.md |
-| Useful request attributes                 | promoted columns             | `@trace(promote=[...])` to surface input args as columns; arbitrary `update_current_trace(metadata=…)` does **not** become row columns unless the pipeline promotes it | https://docs.openlayer.com/monitoring/metadata.md |
+| Useful request attributes                 | custom columns               | pass the field as a **keyword arg** to `update_current_trace(my_field=value)` → registers as a first-class row column. `@trace(promote=[...])` only promotes the decorated fn's **input args** (or keys of a **dict** return) — it errors `key not found in inputs and output is not a dict` on a computed scalar, so it's not a general custom-column mechanism. `update_current_step(metadata={…})` adds step-level metadata. | https://docs.openlayer.com/monitoring/metadata.md |
 | Ground truth arriving later               | update rows after the fact   | `inference_pipelines.rows.update(...)` | https://docs.openlayer.com/monitoring/updating-data.md |
 
 `set_user_session_context`, `update_current_trace`, `update_current_step`, `trace`, `trace_async`,
