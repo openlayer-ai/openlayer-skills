@@ -37,47 +37,20 @@ Note the field names: `MetricReturn(value=, unit=, meta=, added_cols=)` (it's `v
 `score`/`metadata`). Optional configurable parameters declared in `config.json` are read at runtime
 from an auto-generated `params.json`, so behavior changes without editing code.
 
-## 2. Test locally, then register
+## 2. Test locally, then push
 
 ```bash
 openlayer metrics run  -d my_metric     # execute locally to sanity-check the score
-openlayer metrics pull                  # fetch existing metrics into the working dir
+openlayer metrics push -d my_metric     # bundle, upload, and register the metric
 ```
 
-> **Do NOT use `openlayer metrics push` to register — it is currently broken (verified).** It bundles +
-> uploads fine but then **fails registration** with `Property is read-only - 'metricSettings.0.custom'`
-> because it round-trips the server-side read-only `custom` field. Register via the **direct REST API**
-> instead (three steps):
+`push` reads `OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` / `OPENLAYER_PROJECT_ID` from env (see
+`references/cli.md`). `openlayer metrics pull` fetches existing metrics into the working dir, and
+`openlayer metrics delete <key>` removes one.
 
 **Name the metric directory exactly the metric `key`** (e.g. key `shortAnswerRate` → dir
 `shortAnswerRate/`). At evaluation the platform extracts the bundle and looks for `<key>/run.py`; a
 mismatched dir name makes the test error with `missing insights: ['customMetric']`.
-
-```bash
-# 1. Get a presigned UPLOAD url — this must be a **POST** (the GET variant is for downloading an
-#    already-existing object and won't work here). Returns {storageUri, url, ...}.
-curl -s -X POST "$OPENLAYER_BASE_URL/storage/presigned-url?objectName=shortAnswerRate.tar" \
-  -H "Authorization: Bearer $OPENLAYER_API_KEY"          # → {"storageUri": <uri>, "url": <upload_url>, ...}
-
-# 2. Build a PLAIN `.tar` (NOT gzip — a `.tar.gz` fails extraction here with "gzip: invalid header")
-#    whose archive has a top-level `<key>/` dir (tar the dir, NOT its contents). Upload via POST +
-#    multipart/form-data (PUT → 405, application/octet-stream → 415; only `-F file=@...` works).
-tar -cf shortAnswerRate.tar shortAnswerRate/
-curl -s -X POST "<upload_url>" -F "file=@shortAnswerRate.tar"
-
-# 3. Register. Body is wrapped as {"metricSettings": [ {...} ]} (NOT a bare object); the entry has
-#    key, name, description (<=255 chars), lowerBound, upperBound, storageUri, parameterDefinitions[]
-#    and NO `custom` (server sets custom:true). It's an UPSERT by key — a single-entry list is safe
-#    and won't touch the built-in metrics. Returns 200.
-curl -s -X PUT "$OPENLAYER_BASE_URL/projects/$OPENLAYER_PROJECT_ID/metric-settings" \
-  -H "Authorization: Bearer $OPENLAYER_API_KEY" -H 'Content-Type: application/json' \
-  -d '{"metricSettings": [{"key":"shortAnswerRate","name":"Short answer rate","description":"...",
-       "lowerBound":0,"upperBound":1,"storageUri":"<storageUri from step 1>",
-       "parameterDefinitions":[{"name":"max_words","type":"number","defaultValue":50}]}]}'
-```
-
-Remove a metric with `DELETE /projects/{id}/metric-settings?key=<key>`. The CLI reads
-`OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` from env (see `references/cli.md`).
 
 ## 3. Use it in a test
 
