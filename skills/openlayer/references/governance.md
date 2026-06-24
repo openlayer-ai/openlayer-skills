@@ -25,8 +25,8 @@ Docs (concepts): https://docs.openlayer.com/governance/overview.md and the per-t
 
 All endpoints take bearer `OPENLAYER_API_KEY` (workspace-scoped). Most are keyed by **`workspaceId`** —
 get yours from `GET /projects` (each project carries a `workspaceId` field) or the workspace settings
-page in the app. Governance endpoints are **not** in the public OpenAPI spec; the shapes below (verified
-against the API) are authoritative — cross-check the governance docs pages, not the spec.
+page in the app. Governance endpoints are **not** in the public OpenAPI spec; the shapes below are
+authoritative — cross-check the governance docs pages, not the spec.
 
 - **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` (create needs only `name`) ·
   `GET|PUT|DELETE /frameworks/{id}` (only custom frameworks delete; built-ins are `immutable` with a

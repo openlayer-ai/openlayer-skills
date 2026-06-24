@@ -62,12 +62,10 @@ optional `insightParameters`), a `syncId` (UUID), and all three `usesValidationD
 Operational notes (`openlayer validate` does NOT catch these — they fail only at server sync):
 - A single malformed/unsupported test **sync-rejects the WHOLE push** (Total Tests = 0). Fix sync errors
   first; per-test status only exists once sync passes.
-- Reference the model output as **`openlayer_output`** (not the raw output column) in any `column_name` param.
 - After a push, check **per-test status** (`passing`/`failing`, not `skipped`), not just the totals.
 
-When a test targets the model output, reference it as **`openlayer_output`** (the canonical name), not
-the raw `outputColumnName` value — a wrong column name makes the test silently **SKIPPED**, not failed.
-After the push, check per-test status, not just pass/fail totals.
+See `references/tests.md` for the test-shape gotchas — in particular, reference the model output as the
+canonical **`openlayer_output`** (a wrong column name makes the test silently SKIPPED, not failed).
 
 ### 4. Validate, then push
 

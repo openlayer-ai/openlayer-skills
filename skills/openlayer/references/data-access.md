@@ -24,7 +24,7 @@ Resource map (Python; TS mirrors with camelCase):
 | `client.projects.commits` | list dev commits (versions) |
 | `client.projects.tests` | create / update / list tests |
 | `client.commits` / `client.commits.test_results` | retrieve a commit; list its test results |
-| `client.inference_pipelines.rows` | `.list(inference_pipeline_id=…, per_page=…)` (rows are in the response's **`.items`**, not `.rows`) / `.update(...)` to add ground truth |
+| `client.inference_pipelines.rows` | `.list(...)` → rows in the response's **`.items`** (not `.rows`) / `.update(...)` to add ground truth |
 | `client.inference_pipelines.data` | `.stream(...)` to publish rows — see `references/data-streaming.md` |
 | `client.inference_pipelines.test_results` | list a pipeline's test results |
 | `client.storage.presigned_url` | presigned URLs for dataset/file uploads |

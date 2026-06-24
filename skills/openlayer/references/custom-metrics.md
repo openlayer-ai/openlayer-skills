@@ -48,8 +48,8 @@ openlayer metrics push -d my_metric     # bundle, upload, and register the metri
 `references/cli.md`). `openlayer metrics pull` fetches existing metrics into the working dir, and
 `openlayer metrics delete <key>` removes one.
 
-**Name the metric directory exactly the metric `key`** (e.g. key `shortAnswerRate` → dir
-`shortAnswerRate/`). At evaluation the platform extracts the bundle and looks for `<key>/run.py`; a
+**Name the metric directory exactly the metric `key`** (e.g. key `wordCountUnderLimit` → dir
+`wordCountUnderLimit/`). At evaluation the platform extracts the bundle and looks for `<key>/run.py`; a
 mismatched dir name makes the test error with `missing insights: ['customMetric']`.
 
 ## 3. Use it in a test

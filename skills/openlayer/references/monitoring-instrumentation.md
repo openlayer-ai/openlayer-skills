@@ -83,18 +83,21 @@ before confirming the first one publishes — most failures are "configured but 
 
 ### 5. Enrich (only what's relevant — infer from code, ask when unclear)
 
-| If the code has…                          | Add                          | How (verified) | Docs |
+| If the code has…                          | Add                          | How | Docs |
 | ----------------------------------------- | ---------------------------- | --- | ---- |
 | Conversation history / chat endpoints     | user/session context         | `set_user_session_context(user_id=…, session_id=…)` → lands as `openlayer_user_id` / `openlayer_session_id` | https://docs.openlayer.com/monitoring/sessions-and-users.md |
 | Retrieval / RAG                           | context (+ question)         | `@trace(context_kwarg="…", question_kwarg="…")` on the **root** fn — they resolve from its **input args** (NOT `update_current_trace`) | https://docs.openlayer.com/monitoring/context.md |
-| Useful request attributes                 | custom columns               | pass the field as a **keyword arg** to `update_current_trace(my_field=value)` → registers as a first-class row column. `@trace(promote=[...])` only promotes the decorated fn's **input args** (or keys of a **dict** return) — it errors `key not found in inputs and output is not a dict` on a computed scalar, so it's not a general custom-column mechanism. `update_current_step(metadata={…})` adds step-level metadata. | https://docs.openlayer.com/monitoring/metadata.md |
+| Useful request attributes                 | custom columns               | `update_current_trace(field=value)` → first-class row column; `update_current_step(metadata={…})` for step-level metadata (see the `promote` caveat below) | https://docs.openlayer.com/monitoring/metadata.md |
 | Ground truth arriving later               | update rows after the fact   | `inference_pipelines.rows.update(...)` | https://docs.openlayer.com/monitoring/updating-data.md |
 
 `set_user_session_context`, `update_current_trace`, `update_current_step`, `trace`, `trace_async`,
 `trace_openai` are all importable from `openlayer.lib`. **Context/question are driven by the
 `context_kwarg`/`question_kwarg` decorator args (read from the root function's inputs), not by
 `update_current_trace`** — setting them via `update_current_trace` won't populate the row's
-`context`/`_question` columns. For local dev without publishing, set `OPENLAYER_DISABLE_PUBLISH=true`.
+`context`/`_question` columns. Custom row columns come from keyword args to
+`update_current_trace(field=value)`; `@trace(promote=[...])` only promotes the decorated fn's input args
+(or keys of a dict return) and errors on a computed scalar, so it isn't a general custom-column mechanism.
+For local dev without publishing, set `OPENLAYER_DISABLE_PUBLISH=true`.
 Offline buffering is available for unreliable networks (see the tracing docs).
 
 ### 6. Point the user to next steps
