@@ -51,8 +51,13 @@ authoritative — cross-check the governance docs pages, not the spec.
 - **Compliance status:** `GET /workspaces/{workspaceId}/rule-results` (filter to one framework with
   `?frameworkId=<id>`; results are per scoped project) · `GET|PUT /rule-results/{id}`.
 - **Evidence:** `GET|POST /rule-results/{id}/evidence` — the required field depends on the rule's
-  `evidenceType`: document → `storageUri`, url → `url`, text → `text`. Posting valid evidence flips the
-  rule-result from `pending` to `passing`.
+  `evidenceType`: document → `storageUri`, url → `url`, text → `text`. Send **only** that one field (e.g.
+  `{"storageUri": "..."}`) — an extra field like `fileName` gets 400 "Unknown field." Posting valid
+  evidence flips the rule-result from `pending` to `passing`. For a **document**, get the `storageUri` by
+  uploading the file first via the storage presigned-URL flow (`client.storage.presigned_url` /
+  `POST /storage/presigned-url?objectName=<name>`, which returns both a `storageUri` and a one-time upload
+  `url`), then upload to that `url` as **multipart/form-data** (`curl -F "file=@..."`) — it rejects `PUT`
+  (405) and a raw POST body (415) — and post the returned `storageUri` — see `references/data-access.md`.
 
 Bearer `OPENLAYER_API_KEY` is sufficient for all of the above (no cookie/admin auth needed).
 
@@ -78,7 +83,8 @@ a byproduct of the integration work — then read `rule-results` to confirm it f
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
 | Rule create with only `name` | 400 (scope/type required) | Include `scope` and `type` |
-| Evidence POST with the wrong field | 400 (field required) | Match the rule's `evidenceType`: `storageUri`/`url`/`text` |
+| Evidence POST with the wrong field, or an extra field (e.g. `fileName`) | 400 (field required / "Unknown field") | Send exactly one field matching `evidenceType`: `storageUri`/`url`/`text`, nothing else |
+| Uploading to the presigned URL with `PUT` or a raw body | 405 / 415 | POST as `multipart/form-data` (`curl -F "file=@..."`) |
 | Confusing the two rule types | Wrong expectation | Platform rules auto-satisfy via usage; evidence rules need uploads |
 | Trying to `DELETE` a built-in framework/rule | Rejected | Only custom frameworks/rules are deletable |
 | Treating platform rules as manual config | Wasted effort | Do the monitoring/testing work; the rule-result flips automatically |

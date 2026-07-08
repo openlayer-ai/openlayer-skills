@@ -6,6 +6,7 @@ Checks, for every skill under skills/*:
   - name is kebab-case (<=64 chars); description has no angle brackets and <=1024 chars
   - every references/*.md has the same frontmatter constraints
   - every `references/<x>.md` cross-link in the skill resolves to a file that exists
+  - every references/*.md is linked from SKILL.md (no orphans invisible to the router)
 
 And repo-wide:
   - the `version` in .claude-plugin/plugin.json, .claude-plugin/marketplace.json,
@@ -91,6 +92,12 @@ def validate_skill(skill_dir: Path) -> None:
         for link in re.findall(r"references/[a-z][a-z0-9-]*\.md", md.read_text()):
             if not (skill_dir / link).exists():
                 err(f"{md}: dangling cross-link -> {link}")
+
+    # no orphan references: every references/*.md must be linked from SKILL.md
+    skill_links = set(re.findall(r"references/[a-z][a-z0-9-]*\.md", skill_md.read_text()))
+    for ref in sorted((skill_dir / "references").glob("*.md")):
+        if f"references/{ref.name}" not in skill_links:
+            err(f"{ref}: orphan reference — not linked from {skill_md.name}")
 
 
 def check_version_lockstep() -> None:

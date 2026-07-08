@@ -29,5 +29,7 @@ Keep the `version` fields **in lockstep** — bump them together in the same PR 
 Run the format check before committing:
 
 ```bash
-python scripts/quick_validate.py skills/openlayer
+python3 scripts/validate_skills.py
 ```
+
+This is the same check CI runs (frontmatter, cross-links resolve, no orphan references, version lockstep).
