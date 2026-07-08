@@ -29,7 +29,8 @@ Five sections: `taskType` (required), `model` (required), `datasets` (required),
 - `model.modelType`: `"shell"` (you provide precomputed outputs in the dataset — simplest, no runtime)
   or `"full"` (Openlayer runs your code: `runtime`, `installCommand`, `batchCommand` with `{{ path }}`
   and `{{ name }}` placeholders, `outputDirectory`).
-- `datasets[]`: each needs `name`, `label`, `path`. The non-validation `label` is task-type-specific:
+- `datasets[]`: each needs `name`, `label`, `path` (the dataset file must be **`.csv`, `.tsv`, or `.json`
+  (a JSON array of row objects)** — `.jsonl` is rejected). The non-validation `label` is task-type-specific:
   **`fine-tuning`** for `llm-base`, **`training`** for tabular tasks (the validator rejects the wrong one).
   Your eval dataset uses `label: "validation"`; only a *second* (training/reference) dataset uses
   `fine-tuning` (llm-base) or `training` (tabular). A single eval dataset should be `validation`.
@@ -43,29 +44,28 @@ Five sections: `taskType` (required), `model` (required), `datasets` (required),
     field for tabular) + `predictionsColumnName` + `predictionScoresColumnName` (per-class **lists**, not a scalar).
   - **`tabular-regression`**: `featureNames` + `targetColumnName` + `predictionsColumnName`.
   **Dataset column names must match what the config declares.**
-- **Tabular trap (undocumented):** for tabular tasks, `featureNames` / `categoricalFeatureNames` /
-  `classNames` must ALSO be set on the top-level **`model`** object, not only per-dataset. If they're only
-  in datasets, `openlayer validate` passes locally but the **server fails the commit** with an opaque
-  "Something went wrong" error. (`predictionsColumnName`/`predictionScoresColumnName` are likewise absent
-  from the public `openlayer.json` doc but required for classification metrics like rocAuc.)
+- **Tabular gotcha:** for tabular tasks, `featureNames` / `categoricalFeatureNames` / `classNames` must
+  ALSO be set on the top-level **`model`** object, not only per-dataset — if they're only in datasets,
+  `openlayer validate` passes locally but the **server fails the commit** with an opaque "Something went
+  wrong" error. (The dataset field details are in the `openlayer.json` docs.)
 
 ### 3. Author `tests.json`
 
 An array of Test objects. Each: `name`, `type` (`integrity` | `consistency` | `performance`),
-`subtype` (the platform's test id), `mode: "development"`, `thresholds[]`, and `syncId` (a UUID).
-Development-mode tests must include **all three** of `usesValidationDataset`, `usesTrainingDataset`,
-`usesMlModel` — they're each required even when false (omitting one fails sync with
-`'<flag>': ['Missing data for required field.']`). Typical: `usesValidationDataset: true`,
-`usesTrainingDataset: false` (true only for drift/consistency), `usesMlModel: true` for `performance`
-tests / `false` for `integrity`. Threshold fields: `insightName`, `measurement`, `operator`
-(`is`, `>`, `>=`, `<`, `<=`), `value`, optional `insightParameters`.
+`subtype`, `mode: "development"`, `thresholds[]` (`insightName`, `measurement`, `operator`, `value`,
+optional `insightParameters`), a `syncId` (UUID), and all three `usesValidationDataset` /
+`usesTrainingDataset` / `usesMlModel` flags (each required even when false).
 
-**Do not invent `subtype`/threshold shapes.** Copy a working example from the relevant test catalog
-page (`https://docs.openlayer.com/tests/catalog/<test>.md`).
+**Copy the exact shape from the catalog page** `https://docs.openlayer.com/tests/catalog/<test>.md` — the
+`subtype` / `insightName` / `measurement` / `insightParameters` and the flag values there are authoritative.
 
-When a test targets the model output, reference it as **`openlayer_output`** (the canonical name), not
-the raw `outputColumnName` value — a wrong column name makes the test silently **SKIPPED**, not failed.
-After the push, check per-test status, not just pass/fail totals.
+Operational notes (`openlayer validate` does NOT catch these — they fail only at server sync):
+- A single malformed/unsupported test **sync-rejects the WHOLE push** (Total Tests = 0). Fix sync errors
+  first; per-test status only exists once sync passes.
+- After a push, check **per-test status** (`passing`/`failing`, not `skipped`), not just the totals.
+
+See `references/tests.md` for the test-shape gotchas — in particular, reference the model output as the
+canonical **`openlayer_output`** (a wrong column name makes the test silently SKIPPED, not failed).
 
 ### 4. Validate, then push
 

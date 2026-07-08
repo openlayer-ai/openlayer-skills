@@ -37,31 +37,40 @@ Note the field names: `MetricReturn(value=, unit=, meta=, added_cols=)` (it's `v
 `score`/`metadata`). Optional configurable parameters declared in `config.json` are read at runtime
 from an auto-generated `params.json`, so behavior changes without editing code.
 
-## 2. Push / run with the CLI
+## 2. Test locally, then push
 
 ```bash
-openlayer metrics push -d my_metric     # register on the platform (-d/--directory, default "metrics")
-openlayer metrics run  -d my_metric     # execute locally to test
-openlayer metrics pull                  # fetch existing metrics into the working dir
+openlayer metrics run  -d my_metric     # execute locally to sanity-check the score
+openlayer metrics push -d my_metric     # bundle, upload, and register the metric
 ```
 
-The CLI reads `OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` from env (see `references/cli.md`), so push
-runs headless. Registration calls `PUT /projects/{id}/metric-settings` with `{key, name, description,
-lowerBound, upperBound, storageUri}` — the server **auto-detects** that it's custom (the `custom` field
-is read-only and set server-side). Don't send `custom` yourself, or you'll get
-`Property is read-only - 'metricSettings.0.custom'`.
+`push` reads `OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` / `OPENLAYER_PROJECT_ID` from env (see
+`references/cli.md`). `openlayer metrics pull` fetches existing metrics into the working dir, and
+`openlayer metrics delete <key>` removes one.
 
-> **Known CLI bug (verified):** current `openlayer metrics push` bundles + uploads fine but then
-> **fails registration** with exactly that `metricSettings.0.custom` error, because it round-trips the
-> read-only field. Until it's fixed, register via the **direct API** instead: `PUT /projects/{id}/metric-settings`
-> with the body above and **no `custom`** (returns 200; the server sets `custom: true`). Remove a metric
-> with `DELETE /projects/{id}/metric-settings?key=<key>`.
+**Name the metric directory exactly the metric `key`** (e.g. key `wordCountUnderLimit` → dir
+`wordCountUnderLimit/`). At evaluation the platform extracts the bundle and looks for `<key>/run.py`; a
+mismatched dir name makes the test error with `missing insights: ['customMetric']`.
 
 ## 3. Use it in a test
 
-Reference the registered metric key from a test threshold (a `metricThreshold`-style test with the
-metric's key as the `measurement`). See `references/tests.md`; for the test workflow see
-`references/development-setup.md`.
+A custom metric is **not** a `metricThreshold`. It has its own subtype **`customMetricThreshold`** with a
+fixed `insightName: "customMetric"` and a literal `measurement: "value"` — the metric **key goes in
+`insightParameters`** as `{"name": "key", "value": "<metricKey>"}` (NOT as the `measurement`), alongside
+any of the metric's own parameters. It's a `performance` test (`usesMlModel: true`). Example:
+
+```json
+{ "name": "Most answers are concise", "type": "performance", "subtype": "customMetricThreshold",
+  "mode": "development", "usesValidationDataset": true, "usesTrainingDataset": false, "usesMlModel": true,
+  "syncId": "<uuid>",
+  "thresholds": [{ "insightName": "customMetric", "measurement": "value", "operator": ">=", "value": 0.75,
+    "insightParameters": [
+      { "name": "key", "value": "wordCountUnderLimit" },
+      { "name": "max_words", "value": 50 } ] }] }
+```
+
+Push the commit (see `references/development-setup.md`); the metric runs over the dataset and the test
+thresholds on its returned `value`.
 
 ## Common Mistakes
 
