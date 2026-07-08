@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for improving the Openlayer skills. See [`agents.md`](./agents.md) for the editorial rules
+Thanks for improving the Openlayer skills. See [`AGENTS.md`](./AGENTS.md) for the editorial rules
 (lean references, link to docs, "only add a use case if it beats the docs").
 
 ## Add or edit a skill

@@ -40,7 +40,7 @@ You do NOT need them: the CLI reads everything from env vars, so push works head
 export OPENLAYER_API_KEY=...
 export OPENLAYER_PROJECT_ID=...     # the target project's id — replaces `openlayer link`
 export OPENLAYER_BASE_URL=...       # self-hosted/local only
-openlayer push -m "msg" -w          # no login, no link needed
+openlayer push -m "msg"             # no login, no link needed; waits for results by default
 ```
 
 If you ever see `Error: project id not found. Run 'openlayer link'`, do **not** run `link` — set
@@ -51,12 +51,12 @@ workspace is otherwise derived from the API key.)
 
 | Command | Use |
 | --- | --- |
-| `openlayer push -m "msg" -w -t` | Push a commit; `-w` wait for results, `-t` tail logs (the main dev loop) |
+| `openlayer push -m "msg"` | Push a commit and wait for results (`--wait` defaults to true; `-w=false` to skip, `-t` to tail logs) |
 | `openlayer validate` | Validate `openlayer.json` + `tests.json` before pushing |
 | `openlayer inspect <versionID>` | Inspect a commit's details |
 | `openlayer export <pipelineId> <start> <end>` | Export monitoring data from a pipeline |
-| `openlayer projects` | List/manage projects |
-| `openlayer tests` / `metrics` / `batch` / `bundle` / `datasources` | Manage tests, metrics, batch runs, bundles, data sources |
+| `openlayer projects` | Manage projects (`projects create`) |
+| `openlayer tests` / `metrics` / `batch` / `data-sources` | Export tests, manage metrics, batch runs, data sources |
 | `openlayer link` | Link a directory to a project (INTERACTIVE — for automation set `OPENLAYER_PROJECT_ID` instead) |
 | `openlayer profile` | Manage CLI profiles |
 | `openlayer update` | Update the CLI |
@@ -70,6 +70,6 @@ workspace is otherwise derived from the API key.)
 | Expecting a generic REST client | CLI is push/workflow only | Use MCP/SDK/REST for data (`references/data-access.md`) |
 | `npx`/`pip` install | Wrong — it's a Go binary | Use the platform install script |
 | `push` without `validate` | Late, cryptic failures | `openlayer validate` first |
-| `push` without `-w` in CI | Job passes before results land | Use `-w` and fail on failed tests (`references/ci-cd.md`) |
+| Passing `--wait=false` in CI | Job passes before results land | Keep the default (`--wait` is true) and fail on failed tests (`references/ci-cd.md`) |
 | Wrong `export` arg order | Empty/incorrect export | `export <pipelineId> <start> <end>` |
 | Wrong profile/workspace | Pushes to the wrong place | Check `openlayer whoami` / `--profile-name` |

@@ -76,7 +76,7 @@ openlayer validate           # check openlayer.json + tests.json before pushing
 export OPENLAYER_API_KEY=...
 export OPENLAYER_PROJECT_ID=...      # target project id (replaces interactive `openlayer link`)
 export OPENLAYER_BASE_URL=...        # self-hosted/local only
-openlayer push -m "message" -w       # -w waits for results; add -t to tail logs
+openlayer push -m "message"          # waits for results by default (--wait); add -t to tail logs
 ```
 
 `openlayer login` and `openlayer link` are interactive (TTY-only) and will hang an agent — skip them
@@ -109,7 +109,7 @@ see `references/data-access.md`), understand why, then fix and re-push.
 | Wrong or omitted `taskType` | Validation/run fails | Set one of the four task types; match dataset fields to it |
 | Inventing `subtype` / threshold shape | Test won't sync or evaluate | Copy from the test catalog page (`tests/catalog/<test>.md`) |
 | Dataset column names don't match config | Rows fail / outputs unmapped | Align `inputVariableNames` / `featureNames` / `groundTruthColumnName` with the file |
-| Pushing without `-w` in automation | Job "passes" before results exist | Use `-w` (or MCP `wait_for_commit_results`) and fail on failed tests |
+| Passing `--wait=false` in automation | Job "passes" before results exist | Keep the default `--wait` (or MCP `wait_for_commit_results`) and fail on failed tests |
 | Skipping `openlayer validate` | Push fails late with a cryptic error | Always `validate` first |
 | Secrets committed in `openlayer.json` | Leak | Keep keys in env vars, not the config |
 | `modelType: "full"` with no/ wrong `batchCommand` | Output generation fails | Use `{{ path }}`/`{{ name }}` placeholders, or use `"shell"` with precomputed outputs |
