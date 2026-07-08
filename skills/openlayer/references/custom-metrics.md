@@ -13,21 +13,32 @@ Docs: https://docs.openlayer.com/tests/custom-metrics.md and the CLI command htt
 ## 1. Author (one directory per metric)
 
 ```
-my_metric/
-├── run.py            # Metric(metrics.BaseMetric) with compute_on_dataset(); ends with Metric().run()
-├── requirements.txt  # must include openlayer
-└── config.json       # installCommand, runCommand, name, description, lowerBound, upperBound (+ optional params)
+metrics/                    # the dir you pass to `-d` (default is `metrics/`)
+└── wordCountUnderLimit/     # ONE subdir per metric, named EXACTLY the metric key
+    ├── run.py               # Metric(metrics.BaseMetric) with compute_on_dataset(); ends with Metric().run()
+    ├── requirements.txt     # must include openlayer
+    └── config.json          # installCommand, runCommand, name, description, lowerBound, upperBound (+ optional parameterDefinitions[])
 ```
 
-`run.py` (shape — confirm against the docs):
+`-d` points at the **parent** directory; each metric is a **subdirectory** of it. Pointing `-d` straight
+at a leaf metric dir (the one holding `run.py`) makes the CLI report "0 metrics" and push nothing.
+
+**Copy this complete `run.py` shape — do NOT copy the run.py from the docs page.** The docs example reads
+the model output via `data[config["outputColumnName"]]` / `dataset.config[...]`; that key is **absent at
+server evaluation**, so the metric raises a `KeyError` and the test **errors instead of evaluating**. The
+model output is always the canonical column `dataset.df["openlayer_output"]` (see `references/tests.md` for
+the other `openlayer_*` names). Only cross-check the `BaseMetric` / `MetricReturn` *class API* against the docs.
 
 ```python
 from openlayer.lib.core import metrics
 
 class Metric(metrics.BaseMetric):
     def compute_on_dataset(self, dataset: metrics.Dataset) -> metrics.MetricReturn:
-        # dataset.df is a pandas DataFrame; compute fresh (no mutable instance state)
-        return metrics.MetricReturn(value=..., unit=None, meta=None, added_cols=set())
+        # dataset.df is a pandas DataFrame; compute fresh (no mutable instance state).
+        # Model output = the canonical column `dataset.df["openlayer_output"]` (NOT config["outputColumnName"]).
+        df = dataset.df
+        under_limit = df["openlayer_output"].astype(str).str.split().str.len() <= 50
+        return metrics.MetricReturn(value=float(under_limit.mean()), unit=None, meta=None, added_cols=set())
 
 if __name__ == "__main__":   # REQUIRED — the CLI invokes the metric this way
     Metric().run()
@@ -40,8 +51,9 @@ from an auto-generated `params.json`, so behavior changes without editing code.
 ## 2. Test locally, then push
 
 ```bash
-openlayer metrics run  -d my_metric     # execute locally to sanity-check the score
-openlayer metrics push -d my_metric     # bundle, upload, and register the metric
+openlayer metrics push               # register the metric; `-d` defaults to `metrics/` (the parent dir, not the leaf)
+openlayer metrics run -d metrics     # optional local run — needs deps installed and may not work for a
+                                     # shell-only setup, so rely on the pushed commit's goal status instead
 ```
 
 `push` reads `OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` / `OPENLAYER_PROJECT_ID` from env (see
@@ -81,6 +93,7 @@ thresholds on its returned `value`.
 | Returning `score=`/`metadata=` to `MetricReturn` | Wrong field names | Use `value=` and `meta=` |
 | No `lowerBound`/`upperBound` in `config.json` | Score range undefined | Set the bounds |
 | Mutable state on the `Metric` instance | Nondeterministic scores | Compute fresh inside `compute_on_dataset` |
-| Wrong `-d` directory | Pushes nothing / wrong metric | Point `-d` at the metric dir (default `metrics`) |
+| Pointing `-d` at the leaf metric dir | CLI reports "0 metrics", pushes nothing | `-d` is the PARENT dir; put the metric in a `<key>/` subdir (default `-d metrics`) |
+| Reading output via `outputColumnName` / `dataset.config` in `run.py` | KeyError → the test errors instead of evaluating | Read `dataset.df["openlayer_output"]` (canonical output column) |
 | Hardcoding tunables instead of `params.json` | Can't reconfigure without a re-push | Declare params in `config.json`, read from `params.json` |
 | Referencing the metric in a test before pushing | Test can't find the metric | Push first, then author the test against its key |
