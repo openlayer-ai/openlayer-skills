@@ -1,6 +1,6 @@
 {
   "name": "openlayer",
-  "version": "0.2.14",
+  "version": "0.3.0",
   "description": "Openlayer agent skills marketplace \u2014 teach AI coding agents to integrate apps with Openlayer.",
   "owner": {
     "name": "Openlayer",

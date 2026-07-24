@@ -28,7 +28,9 @@ Five sections: `taskType` (required), `model` (required), `datasets` (required),
 (optional, points at `tests.json`), `metrics` (optional). Key choices:
 - `model.modelType`: `"shell"` (you provide precomputed outputs in the dataset — simplest, no runtime)
   or `"full"` (Openlayer runs your code: `runtime`, `installCommand`, `batchCommand` with `{{ path }}`
-  and `{{ name }}` placeholders, `outputDirectory`).
+  and `{{ name }}` placeholders, `outputDirectory`). For a **traditional / tabular ML** `full` model the
+  `batchCommand` typically runs an `openlayer_run.py` implementing `run_batch_from_df` — see
+  `references/traditional-ml.md`.
 - `datasets[]`: each needs `name`, `label`, `path` (the dataset file must be **`.csv`, `.tsv`, or `.json`
   (a JSON array of row objects)** — `.jsonl` is rejected). The non-validation `label` is task-type-specific:
   **`fine-tuning`** for `llm-base`, **`training`** for tabular tasks (the validator rejects the wrong one).
@@ -113,3 +115,4 @@ see `references/data-access.md`), understand why, then fix and re-push.
 | Skipping `openlayer validate` | Push fails late with a cryptic error | Always `validate` first |
 | Secrets committed in `openlayer.json` | Leak | Keep keys in env vars, not the config |
 | `modelType: "full"` with no/ wrong `batchCommand` | Output generation fails | Use `{{ path }}`/`{{ name }}` placeholders, or use `"shell"` with precomputed outputs |
+| `push` bundles the whole project dir (incl. `.venv`/`node_modules`) | Upload 413 Request Entity Too Large | Push from a clean dir — keep the virtualenv / large artifacts outside the project root |

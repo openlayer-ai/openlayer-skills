@@ -76,6 +76,7 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 | If the user wants to…                                   | Read                                      |
 | ------------------------------------------------------- | ----------------------------------------- |
 | Add live tracing / observability to code               | `references/monitoring-instrumentation.md` |
+| Monitor or evaluate a traditional / tabular ML model (scikit-learn, XGBoost, regression/classification) | `references/traditional-ml.md` |
 | Set up offline evals (`openlayer.json` / `tests.json`)  | `references/development-setup.md`          |
 | Create or choose tests / thresholds                     | `references/tests.md`                      |
 | Add runtime guardrails (block/redact PII, injection)    | `references/guardrails.md`                 |

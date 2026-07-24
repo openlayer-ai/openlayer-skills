@@ -8,6 +8,9 @@ description: Instrument an app with Openlayer tracing for live monitoring. Use w
 Add tracing to a live app so each request becomes a trace (inputs, outputs, intermediate steps,
 tokens, cost, latency) that Openlayer runs tests and alerts on.
 
+> **Traditional / tabular ML** (scikit-learn, XGBoost — no LLM call to wrap)? `@trace` is the wrong
+> tool. Publish predictions directly instead — see `references/traditional-ml.md`.
+
 **Always fetch current code from the docs** — providers and helpers change. Start here:
 - Quickstart: https://docs.openlayer.com/monitoring/instrument.md
 - Other integrations (LangChain callback, LiteLLM, Bedrock, Gemini, ADK, etc.): https://docs.openlayer.com/monitoring/alternative-integrations.md
