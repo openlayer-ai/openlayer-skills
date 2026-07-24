@@ -24,9 +24,9 @@ For `llm-base`, the config (e.g. `ConfigLlmData`) maps columns:
   `timestamp_column_name`, `ground_truth_column_name`, `context_column_name`, `question_column_name`,
   `user_id_column_name`, `session_id_column_name`, `inference_id_column_name`, plus `metadata`.
 
-Other task types have their own config classes (classification: `class_names`,
-`predictions_column_name`; tabular: `feature_names`, etc.). Match the config class to the project's
-task type.
+Other task types have their own config classes. Match the config class to the project's task type.
+For **traditional / tabular ML** (the `ConfigTabular*` classes, their required fields, and the batch
+`upload_batch_inferences` alternative), see `references/traditional-ml.md`.
 
 Include an `inference_id` per row if you'll later add ground truth or update the row
 (`client.inference_pipelines.rows.update(...)`).
@@ -46,4 +46,5 @@ streaming *instead of* tracing for that path, not in addition.
 | Streaming data that tracing already publishes | Duplicate rows | Pick one path per request flow |
 | No `inference_id` | Can't correlate later ground-truth updates | Set `inference_id_column_name` and provide stable ids |
 | Wrong timestamp unit/format | Rows mis-ordered or rejected | Use the unit the docs specify |
+| Row values are numpy scalars (from a pandas row) | Server dtype validation 400 (e.g. "must be int32/int64") | Cast to native Python types (`int(...)`, `.item()`) before streaming |
 | Guessing config field names | Runtime error | Confirm fields from the current docs/SDK |
