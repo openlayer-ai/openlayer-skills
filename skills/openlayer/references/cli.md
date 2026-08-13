@@ -54,7 +54,7 @@ workspace is otherwise derived from the API key.)
 | `openlayer push -m "msg"` | Push a commit and wait for results (`--wait` defaults to true; `-w=false` to skip, `-t` to tail logs) |
 | `openlayer validate` | Validate `openlayer.json` + `tests.json` before pushing |
 | `openlayer inspect <versionID>` | Inspect a commit's details |
-| `openlayer export <pipelineId> <start> <end>` | Export monitoring data from a pipeline |
+| `openlayer export <pipelineId> --from <start> --to <end>` | Export monitoring data from a pipeline (`--last 7d` / `--range this-week` also work; `--from`/`--to` take dates or Unix timestamps) |
 | `openlayer projects` | Manage projects (`projects create`) |
 | `openlayer tests` / `metrics` / `batch` / `data-sources` | Export tests, manage metrics, batch runs, data sources |
 | `openlayer link` | Link a directory to a project (INTERACTIVE — for automation set `OPENLAYER_PROJECT_ID` instead) |
@@ -71,5 +71,5 @@ workspace is otherwise derived from the API key.)
 | `npx`/`pip` install | Wrong — it's a Go binary | Use the platform install script |
 | `push` without `validate` | Late, cryptic failures | `openlayer validate` first |
 | Passing `--wait=false` in CI | Job passes before results land | Keep the default (`--wait` is true) and fail on failed tests (`references/ci-cd.md`) |
-| Wrong `export` arg order | Empty/incorrect export | `export <pipelineId> <start> <end>` |
+| Passing the time range to `export` positionally | Positional `<start> <end>` is the legacy Unix-timestamp-only form — a date fails with `invalid start timestamp: strconv.ParseInt` | `export <pipelineId> --from 2025-08-01 --to 2025-08-10` (or `--last 7d`) |
 | Wrong profile/workspace | Pushes to the wrong place | Check `openlayer whoami` / `--profile-name` |
