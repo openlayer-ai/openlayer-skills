@@ -47,6 +47,18 @@ If you ever see `Error: project id not found. Run 'openlayer link'`, do **not** 
 `OPENLAYER_PROJECT_ID` instead. (`OPENLAYER_WORKSPACE_ID` is also read from env if needed; the
 workspace is otherwise derived from the API key.)
 
+### `OPENLAYER_BASE_URL`: the CLI and the SDKs disagree about `/v1`
+
+Only relevant for self-hosted or local backends, but a silent failure when it's wrong:
+
+- **SDKs** (Python/TS, and the app you instrument) treat it as the full API root — **include** `/v1`:
+  `https://openlayer.internal/v1`, `http://localhost:8090/v1`.
+- **CLI** appends `/v1` per request, so its stored profile URL **omits** it. Recent CLI versions
+  normalize either form on input; older ones do not.
+
+When both run in the same shell, set the SDK form (`.../v1`) — the CLI strips a trailing `/v1`, but an
+SDK given the CLI form gets 404s or silently publishes nothing.
+
 ## Core commands
 
 | Command | Use |
@@ -61,6 +73,34 @@ workspace is otherwise derived from the API key.)
 | `openlayer profile` | Manage CLI profiles |
 | `openlayer update` | Update the CLI |
 
+## Controlling what gets uploaded (`.openlayerignore`)
+
+`push` bundles **the entire directory containing `openlayer.json`** and uploads it. A virtualenv,
+`node_modules`, model checkpoints, or dataset caches sitting next to that file are swept in — this is
+the usual cause of a multi-hundred-megabyte upload or a `413`.
+
+Put a `.openlayerignore` next to `openlayer.json`. It uses gitignore syntax:
+
+```gitignore
+node_modules/
+.venv/
+.next/
+data/raw_dumps/
+*.ckpt
+```
+
+Recent CLI versions already exclude common dependency and build directories (`node_modules/`, `.venv/`,
+`.next/`, `dist/`, `build/`, `__pycache__/`, `.git/`, checkpoint files) by default, and warn before
+uploading an oversized bundle. Two consequences worth knowing:
+
+- Re-include a default with a `!` negation (`!dist/`) — needed if your `model.outputDirectory` or
+  metrics directory is named like one of them.
+- On an older CLI, none of this is automatic: list everything explicitly.
+
+Keep whatever the eval actually reads — `openlayer.json`, the runner script, `requirements.txt`, and
+the dataset — and exclude the rest. The remote run reinstalls dependencies from your `installCommand`;
+it never needs your local ones.
+
 ## Common Mistakes
 
 | Mistake | Problem | Fix |
@@ -73,3 +113,6 @@ workspace is otherwise derived from the API key.)
 | Passing `--wait=false` in CI | Job passes before results land | Keep the default (`--wait` is true) and fail on failed tests (`references/ci-cd.md`) |
 | Wrong `export` arg order | Empty/incorrect export | `export <pipelineId> <start> <end>` |
 | Wrong profile/workspace | Pushes to the wrong place | Check `openlayer whoami` / `--profile-name` |
+| `openlayer.json` sits beside `node_modules`/`.venv`/checkpoints | Bundle balloons to hundreds of MB; upload is slow or fails with `413` | Add a `.openlayerignore` next to `openlayer.json` (see above) |
+| `OPENLAYER_BASE_URL` without `/v1` for the SDK | 404s or traces that never land | SDKs need the `/v1`; the CLI profile URL doesn't (see above) |
+| `model.outputDirectory` named `dist`/`build` | Excluded by the CLI's default ignores, so outputs never upload | Rename it, or re-include with `!dist/` in `.openlayerignore` |
