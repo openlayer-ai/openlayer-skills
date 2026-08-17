@@ -44,8 +44,12 @@ Follow these for ALL Openlayer work:
      offline before shipping?" Many teams eventually use both.
 4. **Minimal footprint.** Wrap existing clients and decorate existing functions — don't rewrite app logic.
 5. **Never hardcode keys.** Use env vars: `OPENLAYER_API_KEY`, `OPENLAYER_BASE_URL` (self-hosted/local
-   only), `OPENLAYER_INFERENCE_PIPELINE_ID`, `OPENLAYER_DISABLE_PUBLISH`. Don't ask the user to paste
+   only — the SDKs need it to **include** `/v1`, unlike the CLI profile URL; see `references/cli.md`),
+   `OPENLAYER_INFERENCE_PIPELINE_ID`, `OPENLAYER_DISABLE_PUBLISH`. Don't ask the user to paste
    keys into chat — have them set the env var or a `.env`. Keys: Workspace settings → API keys.
+6. **Debugging is not rebuilding.** When something already set up isn't working, diagnose before
+   editing — most failures are an unset env var, a base URL, or an app that never loaded its env file,
+   not wrong instrumentation. Start from `references/troubleshooting.md`.
 
 ## Data access (the "API" plane)
 
@@ -75,6 +79,7 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 
 | If the user wants to…                                   | Read                                      |
 | ------------------------------------------------------- | ----------------------------------------- |
+| **Debug a setup that isn't working** (no traces, push/413, auth, base URL) | `references/troubleshooting.md` |
 | Add live tracing / observability to code               | `references/monitoring-instrumentation.md` |
 | Monitor or evaluate a traditional / tabular ML model (scikit-learn, XGBoost, regression/classification) | `references/traditional-ml.md` |
 | Set up offline evals (`openlayer.json` / `tests.json`)  | `references/development-setup.md`          |

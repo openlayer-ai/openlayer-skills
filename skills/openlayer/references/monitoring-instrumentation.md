@@ -73,6 +73,37 @@ def answer(question: str) -> str:
     return llm(question, context)
 ```
 
+#### Every parameter of a traced function becomes a column — keep them serializable
+
+`@trace()` reflects on the decorated function's **declared parameters** and captures each argument as
+an input variable. Those names are written into the row's `inputVariableNames`, but the values are
+JSON-serialized — and anything that doesn't survive `JSON.stringify` / `json.dumps` (a callback, a
+client handle, a DB session, a file object) is dropped from the payload while its **name stays in the
+config**. The row then arrives one column short of what it declared:
+
+```
+400 There is one issue with the row/config streamed: 1. Not all input variables specified in
+`inputVariableNames` are in the dataset.
+```
+
+Fix it by changing the signature, not by removing the trace — pass plain data and derive the
+non-serializable thing inside the function body:
+
+```ts
+// ✗ measureTime is declared, captured, then silently dropped on serialization
+const processQuery = trace(async (messages, model, measureTime: (l: string) => void) => { … })
+
+// ✓ every captured parameter is serializable data
+const processQuery = trace(async (messages, model, apiStart: number) => {
+  const measureTime = (label: string) => console.log(label, Date.now() - apiStart)
+  …
+})
+```
+
+The same applies in Python: a traced function taking `db_session`, `client`, or an `on_progress`
+callback will declare a column it can't fill. If a non-serializable argument genuinely has to stay in
+the signature, wrap the traced work in an inner function that takes only data and decorate that one.
+
 `context_kwarg`/`question_kwarg` are an alternative to `log_context`/`log_question`, but they read from
 the decorated function's **own declared parameters** — `@trace(context_kwarg="context")` errors with
 `Context kwarg 'context' not found in inputs` unless `context` is a parameter of that function. When the
@@ -125,3 +156,5 @@ Tests run on the live traces — to add quality checks, see the tests docs
 | Adding lots of instrumentation before verifying | Hard to debug why nothing lands | Verify one trace publishes first, then enrich |
 | Guessing provider wrapper names/signatures from memory | Wrong import, runtime error | Fetch the current snippet from the instrument / alternative-integrations docs |
 | Assuming TS auto-publishes without the pipeline env var | Silent no-op | TS publishes only when `OPENLAYER_INFERENCE_PIPELINE_ID` is set; `OPENLAYER_DISABLE_PUBLISH=true` disables |
+| A traced function takes a callback, client, or session as a parameter | 400 `Not all input variables specified in inputVariableNames are in the dataset` — the name is declared, the value is dropped on serialization | Pass plain data and build the non-serializable value inside the function (see "keep them serializable" above) |
+| `OPENLAYER_BASE_URL` set without the `/v1` suffix | 404s on every publish, or traces that silently never land | The SDK's base URL is the full API root and **includes** `/v1` — unlike the CLI profile URL, which omits it (see `references/cli.md`) |

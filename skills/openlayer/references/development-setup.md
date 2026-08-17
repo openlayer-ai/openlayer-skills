@@ -85,6 +85,28 @@ openlayer push -m "message"          # waits for results by default (--wait); ad
 and set `OPENLAYER_PROJECT_ID`. If you see `project id not found. Run 'openlayer link'`, set that env
 var instead of running `link`. See `references/cli.md`.
 
+`OPENLAYER_BASE_URL` for the CLI omits the `/v1` that the SDKs require — see `references/cli.md` if
+you're on a self-hosted or local backend.
+
+#### Keeping the bundle small
+
+`push` uploads **everything in the directory containing `openlayer.json`**. When that directory is
+also an application root, the virtualenv, `node_modules`, or model checkpoints go up with it — the
+usual cause of a slow push or a `413`. Write a `.openlayerignore` next to `openlayer.json`:
+
+```gitignore
+node_modules/
+.venv/
+.next/
+*.ckpt
+```
+
+Recent CLI versions exclude common dependency and build directories by default and warn before an
+oversized upload; a `!dist/`-style negation re-includes one if your output or metrics directory
+happens to share a name. On older versions nothing is excluded automatically. Keep what the eval
+reads — the config, the runner, `requirements.txt`, the dataset — and drop the rest; the remote run
+reinstalls dependencies via your `installCommand`. Details in `references/cli.md`.
+
 After push, Openlayer runs the model, generates insights, evaluates tests, and reports pass/fail
 (commit logs in the app, Git, or REST `commits.test_results`). See `references/cli.md` and
 `references/data-access.md`.
@@ -115,4 +137,5 @@ see `references/data-access.md`), understand why, then fix and re-push.
 | Skipping `openlayer validate` | Push fails late with a cryptic error | Always `validate` first |
 | Secrets committed in `openlayer.json` | Leak | Keep keys in env vars, not the config |
 | `modelType: "full"` with no/ wrong `batchCommand` | Output generation fails | Use `{{ path }}`/`{{ name }}` placeholders, or use `"shell"` with precomputed outputs |
-| `push` bundles the whole project dir (incl. `.venv`/`node_modules`) | Upload 413 Request Entity Too Large | Push from a clean dir — keep the virtualenv / large artifacts outside the project root |
+| `push` bundles the whole directory holding `openlayer.json` (incl. `.venv`/`node_modules`) | Hundreds of MB uploaded; `413 Request Entity Too Large` | Add a `.openlayerignore` next to `openlayer.json` — see "Keeping the bundle small" above |
+| `model.outputDirectory` named `dist`/`build`/`target` | Excluded by the CLI's default ignores, so generated outputs never upload | Rename it, or re-include it with `!dist/` in `.openlayerignore` |
