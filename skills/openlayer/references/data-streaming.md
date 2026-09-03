@@ -31,6 +31,12 @@ For **traditional / tabular ML** (the `ConfigTabular*` classes, their required f
 Include an `inference_id` per row if you'll later add ground truth or update the row
 (`client.inference_pipelines.rows.update(...)`).
 
+The configured source names describe the incoming row, but Openlayer persists mapped semantic fields
+under canonical names. For example, an incoming `response` mapped as the output is stored as
+`openlayer_output`. After streaming the first small batch, fetch one stored row and inspect its actual
+schema before creating tests or filters. This catches mapping mistakes before they turn into skipped
+evaluations.
+
 ## Stream vs trace — don't double-publish
 
 If the app is already instrumented with `@trace` / a wrapper (`references/monitoring-instrumentation.md`),
@@ -45,6 +51,7 @@ streaming *instead of* tracing for that path, not in addition.
 | Wrong config class for the task type | Validation error | Use the config matching the project `task_type` |
 | Streaming data that tracing already publishes | Duplicate rows | Pick one path per request flow |
 | No `inference_id` | Can't correlate later ground-truth updates | Set `inference_id_column_name` and provide stable ids |
+| Authoring tests from upload field names | Mapped fields are persisted under canonical names | Inspect a stored row; target `openlayer_output` and the other `openlayer_*` fields |
 | Wrong timestamp unit/format | Rows mis-ordered or rejected | Use the unit the docs specify |
 | Row values are numpy scalars (from a pandas row) | Server dtype validation 400 (e.g. "must be int32/int64") | Cast to native Python types (`int(...)`, `.item()`) before streaming |
 | Guessing config field names | Runtime error | Confirm fields from the current docs/SDK |
