@@ -44,20 +44,15 @@ copilot plugin marketplace add openlayer-ai/openlayer-skills
 copilot plugin install openlayer@openlayer
 ```
 
-For the **cloud coding agent** and **Copilot code review**, copy `skills/openlayer` into your repository's `.github/skills/` directory.
+### Other agents
 
-### skills CLI
+Codex, Gemini CLI, Windsurf, opencode, and dozens more install through the [skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
 npx skills add openlayer-ai/openlayer-skills --skill "openlayer"
 ```
 
-### Manual symlink
-
-```bash
-git clone https://github.com/openlayer-ai/openlayer-skills.git /path/to/openlayer-skills
-ln -s /path/to/openlayer-skills/skills/openlayer /path/to/skills-directory/openlayer
-```
+For claude.ai, Copilot's cloud coding agent and code review, a manual symlink, or anything else, see the [installation guide](https://docs.openlayer.com/openlayer-skills) — it is the source of truth and stays current as these tools change.
 
 ## Prerequisites
 
