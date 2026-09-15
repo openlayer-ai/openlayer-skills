@@ -1,6 +1,6 @@
 # Openlayer Skills
 
-[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, etc.) how to integrate apps with [Openlayer](https://openlayer.com) — the AI evaluation and observability platform.
+[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) how to integrate apps with [Openlayer](https://openlayer.com) — the AI evaluation and observability platform.
 
 Coding agents produce significantly better results with the skill installed, because they are conditioned to follow Openlayer's current best practices instead of guessing from memory (outdated SDK calls, wrong env vars, invented test configs).
 
@@ -24,6 +24,27 @@ claude plugin install openlayer@openlayer
 ```
 /add-plugin openlayer
 ```
+
+### GitHub Copilot
+
+GitHub Copilot reads the same plugin manifest as Claude Code.
+
+In **VS Code**, add the marketplace to your `settings.json`, then install **Openlayer** from the Extensions view (search `@agentPlugins`):
+
+```json
+{
+  "chat.plugins.marketplaces": ["openlayer-ai/openlayer-skills"]
+}
+```
+
+In the **Copilot CLI**:
+
+```bash
+copilot plugin marketplace add openlayer-ai/openlayer-skills
+copilot plugin install openlayer@openlayer
+```
+
+For the **cloud coding agent** and **Copilot code review**, copy `skills/openlayer` into your repository's `.github/skills/` directory.
 
 ### skills CLI
 
