@@ -93,5 +93,6 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 | Gate CI/CD on eval results                              | `references/ci-cd.md`                      |
 | Query data programmatically                             | `references/data-access.md`                |
 | Install/use the Openlayer CLI                           | `references/cli.md`                        |
+| Point the SDK/CLI at a self-hosted or on-prem backend   | `references/self-hosted.md`                |
 | Find or fetch docs                                      | `references/docs-access.md`                |
 | Install or upgrade the SDK                              | `references/sdk-upgrade.md`                |
