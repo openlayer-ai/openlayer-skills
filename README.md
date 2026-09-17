@@ -1,6 +1,6 @@
 # Openlayer Skills
 
-[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, etc.) how to integrate apps with [Openlayer](https://openlayer.com) — the AI evaluation and observability platform.
+[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) how to integrate apps with [Openlayer](https://openlayer.com) — the AI evaluation and observability platform.
 
 Coding agents produce significantly better results with the skill installed, because they are conditioned to follow Openlayer's current best practices instead of guessing from memory (outdated SDK calls, wrong env vars, invented test configs).
 
@@ -25,18 +25,34 @@ claude plugin install openlayer@openlayer
 /add-plugin openlayer
 ```
 
-### skills CLI
+### GitHub Copilot
+
+GitHub Copilot reads the same plugin manifest as Claude Code.
+
+In **VS Code**, add the marketplace to your `settings.json`, then install **Openlayer** from the Extensions view (search `@agentPlugins`):
+
+```json
+{
+  "chat.plugins.marketplaces": ["openlayer-ai/openlayer-skills"]
+}
+```
+
+In the **Copilot CLI**:
+
+```bash
+copilot plugin marketplace add openlayer-ai/openlayer-skills
+copilot plugin install openlayer@openlayer
+```
+
+### Other agents
+
+Codex, Gemini CLI, Windsurf, opencode, and dozens more install through the [skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
 npx skills add openlayer-ai/openlayer-skills --skill "openlayer"
 ```
 
-### Manual symlink
-
-```bash
-git clone https://github.com/openlayer-ai/openlayer-skills.git /path/to/openlayer-skills
-ln -s /path/to/openlayer-skills/skills/openlayer /path/to/skills-directory/openlayer
-```
+For claude.ai, Copilot's cloud coding agent and code review, a manual symlink, or anything else, see the [installation guide](https://docs.openlayer.com/openlayer-skills) — it is the source of truth and stays current as these tools change.
 
 ## Prerequisites
 
