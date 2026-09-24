@@ -2,6 +2,8 @@
 
 Guidance for agents editing this repo (adding or improving skill content).
 
+The skills-maintainer bot re-reads `NORI.md` on every wake; coworkers edit that playbook via PR.
+
 ## Adding or Improving a Use Case
 
 - **Only add a use case if it beats the docs.** If an agent can already serve the user by fetching the Openlayer docs (`docs.openlayer.com`, see `references/docs-access.md`), add nothing. Reserve new content for where docs fall short and the agent needs extra context (mode routing, the MCP-vs-SDK-vs-REST decision, non-obvious pitfalls). *Every addition is maintenance surface and dilutes the skill.*
