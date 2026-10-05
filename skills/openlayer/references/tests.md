@@ -41,9 +41,14 @@ name makes the test silently **SKIPPED** ("column not in dataset"), which a "0 f
 
 - **`insightParameters` is never `null`.** The catalog prints `"insightParameters": null` for some tests,
   but the API rejects null ("Field may not be null"). When a test takes params, use an array of
-  `{name, value}`. When it takes none, **omit the key entirely** — for many subtypes (`hasPromptInjectionCount`,
-  `metricThreshold`, and the no-param drift/profile tests `labelDrift`/`driftedFeatureCount`/
+  `{name, value}`. When it takes none, **omit the key entirely** — for many subtypes (`metricThreshold`
+  and the no-param drift/profile tests `labelDrift`/`driftedFeatureCount`/
   `classImbalanceRatio`/`correlatedFeatureCount`) even `[]` is rejected ("Unknown field").
+- **Omitting `detector` on `hasPromptInjectionCount` keeps legacy Prompt Guard 2.** API, `tests.json`, and
+  programmatic creation with no `detector` resolve to frozen `prompt_guard_2` (English/jailbreak-tuned,
+  weak on multilingual input), unlike the UI default for new tests (`horizon_base` / `balanced`). Set
+  `detector` explicitly for a multilingual app. Do not pass `sensitivity` with `prompt_guard_2` or with
+  no `detector` — creation rejects it. https://docs.openlayer.com/tests/catalog/has-prompt-injection-count.md
 - **Catalog values can be wrong/stale — they fail at sync.** Seen: `columnDrift` `test_type` must be
   title-case **`"K-S Test"`** (catalog shows `"K-S test"`); `classImbalanceRatio` `operator` must be
   `<` or `<=` (catalog shows `>`). Cross-check the operator/enum the backend accepts, not just the catalog text.
