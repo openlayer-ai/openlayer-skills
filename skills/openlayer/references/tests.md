@@ -22,7 +22,7 @@ Docs:
 
 - **Development** tests live in `tests.json` (see `references/development-setup.md`) or
   `projects.tests.create`; also set `usesValidationDataset` / `usesTrainingDataset` / `usesMlModel`.
-- **Monitoring** tests run on live traces; set `evaluationWindow` / `delayWindow` (hours).
+- **Monitoring** tests run on live traces; set `evaluationWindow` / `delayWindow` in **seconds**, as multiples of 3600 (e.g. `86400` = one day; max 30 days).
 
 For monitoring-test API payloads, set `usesProductionData: true` and explicitly provide the other
 applicable `uses*` booleans (`usesMlModel`, `usesReferenceDataset`, `usesTestResults`,
