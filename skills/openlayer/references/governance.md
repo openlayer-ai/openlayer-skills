@@ -33,8 +33,10 @@ authoritative — cross-check the governance docs pages, not the spec.
   non-null `builtInSlug`) · `GET /frameworks/{id}/projects` · `GET /frameworks/{id}/project-rule-stats`.
 - **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector` of shape
   `{"match": [{"property": ..., "value": ...}]}` (criteria ANDed; `[]`/null = all projects). `property`
-  is a fixed enum: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `modelTypes`
-  (there is **no** `id` or `approvalStatus` — scope "by project" via `name`/`ownerId`).
+  is a fixed enum: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds`
+  (project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in`),
+  `modelTypes` (deprecated — matches tag names, case-insensitive; use `tagIds`). There is **no**
+  `id` or `approvalStatus` — scope "by project" via `name`/`ownerId`.
 - **Rules:** `GET|POST /workspaces/{workspaceId}/rules` (create requires `name`, `scope`
   [`workspace`|`project`], `type` [`evidence`|`platform`]) · `POST /workspaces/{workspaceId}/rules/batch`
   (body is a **bare JSON array**, not `{items:[...]}`) · `GET|PUT|DELETE /rules/{id}`. A `platform` rule
@@ -78,7 +80,8 @@ a byproduct of the integration work — then read `rule-results` to confirm it f
 | ------- | ------- | --- |
 | Assuming governance is UI-only | Misses automation | There is a full REST API (frameworks/rules/rule-results/evidence) |
 | Activating a framework but not scoping it to projects | No checklist appears | Set `enabled` + a `projectSelector` on the framework |
-| `projectSelector` using `id` or `approvalStatus` | Matches nothing silently | Use the property enum: `name`/`ownerId`/`taskType`/`riskLevel`/`riskTotalScore`/`modelTypes` |
+| `projectSelector` using `id` or `approvalStatus` | Matches nothing silently | Use the property enum: `name`/`ownerId`/`taskType`/`riskLevel`/`riskTotalScore`/`tagIds`/`modelTypes` (deprecated — matches tag names) |
+| Scoping a framework by tag name | `modelTypes` is deprecated (name match) | Use `tagIds` with project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags` (`operator` `in`) |
 | `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
