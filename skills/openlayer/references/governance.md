@@ -10,7 +10,7 @@ projects, each scoped project gets a compliance checklist, and engineering work 
 It is driveable **both via the UI and a full REST API**.
 
 Docs (concepts): https://docs.openlayer.com/governance/overview.md and the per-topic pages
-(`activate-framework`, `build-custom-framework`, `platform-rules`, `evidence-based-rules`,
+(`activate-framework`, `api-access`, `build-custom-framework`, `platform-rules`, `evidence-based-rules`,
 `project-compliance`). Confirm request/response schemas from the API reference / OpenAPI.
 
 ## Two kinds of rules
@@ -31,24 +31,19 @@ authoritative — cross-check the governance docs pages, not the spec.
 - **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` (create needs only `name`) ·
   `GET|PUT|DELETE /frameworks/{id}` (only custom frameworks delete; built-ins are `immutable` with a
   non-null `builtInSlug`) · `GET /frameworks/{id}/projects` · `GET /frameworks/{id}/project-rule-stats`.
-- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector`. A selector that
-  only carries `match` is unchanged: criteria are ANDed and apply to every project, existing and
-  future (`[]`/null = all). `property` is `name`, `ownerId`, `taskType`, `riskLevel`,
-  `riskTotalScore`, or `tagIds` (project tag UUIDs from
-  `GET /workspaces/{workspaceId}/project-tags`; `operator` `in` = any, `notIn` = none;
-  `equals`/`notEquals` are folded into those; other operators and non-UUID values are rejected).
-  `modelTypes` is legacy and auto-converted to `tagIds` on write. Pick specific projects by sending
-  `includeProjectIds` (UUID array, schema default `[]`), not `match` on `id`. Omitting the key keeps
-  criteria-only scope:
-  `{"match": [...], "includeProjectIds": ["<project-uuid>"], "applyToFutureProjects": true}`.
-  Sending that key (even `[]`) pins the projects that exist then: listed ones are in, every other
-  existing project is out whatever `match` says, and `match` only reaches projects created
-  afterwards. `applyToFutureProjects` (default `true`) is whether `match` applies at all; `false`
-  links only `includeProjectIds`. Do not send `matchProjectsCreatedAfter` — the server stamps it
-  when the request carries `includeProjectIds`, and sending it is 400 read-only. `PUT` replaces the
-  whole selector, so a later PUT that omits `includeProjectIds` drops the picks (the frameworks
-  list omits that field; only `GET /frameworks/{id}` returns it). `id` and `approvalStatus` are
-  still not `match` properties.
+- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector`. Picks
+  (`includeProjectIds`), `applyToFutureProjects`, and read-only `matchProjectsCreatedAfter`:
+  https://docs.openlayer.com/governance/api-access.md (UI:
+  https://docs.openlayer.com/governance/activate-framework.md). A selector that only carries `match`
+  is unchanged: criteria are ANDed and apply to every project, existing and future (`[]`/null = all).
+  Omit `includeProjectIds` for criteria-only scope. Sending the key, even `[]`, pins: an empty list
+  leaves every existing project unlisted. `property` is `name`, `ownerId`, `taskType`, `riskLevel`,
+  `riskTotalScore`, or `tagIds` (project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`;
+  `operator` `in` = any, `notIn` = none; `equals`/`notEquals` fold into those; other operators and
+  non-UUID values are rejected). `modelTypes` is not in the enum (legacy writes are auto-converted to `tagIds`). `id` and
+  `approvalStatus` are not `match` properties. The frameworks list omits `includeProjectIds` — only
+  `GET /frameworks/{id}` returns it — so read that before a PUT and send the picks back, without
+  `matchProjectsCreatedAfter` (400 if sent).
 - **Rules:** `GET|POST /workspaces/{workspaceId}/rules` (create requires `name`, `scope`
   [`workspace`|`project`], `type` [`evidence`|`platform`]) · `POST /workspaces/{workspaceId}/rules/batch`
   (body is a **bare JSON array**, not `{items:[...]}`) · `GET|PUT|DELETE /rules/{id}`. A `platform` rule
@@ -58,15 +53,16 @@ authoritative — cross-check the governance docs pages, not the spec.
   `monitoring_traces_enabled`, `monitoring_sessions_enabled`, `monitoring_users_enabled`,
   `monitoring_notifications_enabled`, `test_setup`, `project_risk_level_set`, `project_description_set`,
   `project_owner_set`.
-- **Auto-create `test_setup` tests:** `PUT /frameworks/{id}` accepts `autoCreateTests` (bool, default
-  `false`) and `autoCreateTestRuleIds` (`uuid[]` | `null` — a subset of this framework's own
-  `test_setup` rules; `null` means every auto-creatable one). On an **enabled** framework the server
-  asynchronously creates the tests those rules need in every project the framework applies to (the
-  current ones when the switch, the subset, or `enabled` changes, and projects as they join), skipping
-  tests the project already has. The tests are built so the `test_setup` rule result passes. See
-  what it can create with `GET /frameworks/{id}/auto-creatable-tests?taskType=…` (`autoCreatable`,
-  `creatableTaskTypes`, `blocker`, `usesLlmJudge` per rule). A later PUT that omits `autoCreateTests`
-  leaves the stored value.
+- **Auto-create `test_setup` tests:** `autoCreateTests` and `autoCreateTestRuleIds` on
+  `PUT /frameworks/{id}`, and the UI review:
+  https://docs.openlayer.com/governance/api-access.md and
+  https://docs.openlayer.com/governance/activate-framework.md. Nothing is created from framework POST,
+  on a disabled framework, or in the PUT response. The job runs after a PUT that leaves an **enabled**
+  framework with the switch on, including when the rule subset or `enabled` changes. A PUT that omits
+  `autoCreateTests` keeps the stored value.
+  `GET /frameworks/{id}/auto-creatable-tests?taskType=…` returns `autoCreatable`, `creatableTaskTypes`,
+  `blocker` (`requires_column`, `requires_parameters`, `requires_reference_dataset`,
+  `unsupported_subtype`, `no_default_threshold`), and `usesLlmJudge` per rule.
 - **Attach rules to a framework:** rules are created standalone on the workspace, then linked via
   `PATCH /frameworks/{id}/rules` with `{"ops": [{"op": "attach", "ruleId": "<id>"}]}` (`"op": "detach"`
   to remove). Passing `frameworkId` in the rule-create body is **silently ignored** — you must PATCH.
@@ -94,8 +90,8 @@ Platform rules are satisfied **by code you can write**: set up monitoring
 (`references/monitoring-instrumentation.md`), add CI/CD eval gates (`references/ci-cd.md`), and create
 the relevant tests (`references/tests.md`, e.g. PII / bias / hallucination). That turns compliance into
 a byproduct of the integration work — then read `rule-results` to confirm it flipped to satisfied.
-For a `test_setup` rule, check `GET /frameworks/{id}/auto-creatable-tests` and turn `autoCreateTests`
-on instead of hand-building tests for rules with no `blocker`; create only the blocked ones
+For a `test_setup` rule, flip `autoCreateTests` instead of hand-building tests. Check
+`GET /frameworks/{id}/auto-creatable-tests` and create only rules that return a `blocker`
 (`references/tests.md`).
 
 ## Common Mistakes
@@ -104,15 +100,14 @@ on instead of hand-building tests for rules with no `blocker`; create only the b
 | ------- | ------- | --- |
 | Assuming governance is UI-only | Misses automation | There is a full REST API (frameworks/rules/rule-results/evidence) |
 | Activating a framework but not scoping it to projects | No checklist appears | Set `enabled` + a `projectSelector` on the framework |
-| `match` on `id` or `approvalStatus` | Not `match` properties — matches nothing | Pin projects with `includeProjectIds`. Criteria: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds` |
-| Scoping by tag name or `modelTypes` | `modelTypes` is not in the enum (legacy; auto-converted to `tagIds`); non-UUID values are rejected | `tagIds` of project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in` (any) or `notIn` (none) |
-| Sending `includeProjectIds` (even `[]`) to add projects on top of `match` | Pins that moment: listed IDs are in, every other existing project is out, and `match` only hits projects created afterwards | Omit the key for criteria-only scope; to pin, list every existing project that should stay linked |
-| `PUT /frameworks/{id}` that omits `includeProjectIds` | Replaces the whole selector and drops the picks. The frameworks list omits the field | Read `GET /frameworks/{id}` and send the full selector back, including `includeProjectIds` (never echo read-only `matchProjectsCreatedAfter`) |
+| `match` on `id` or `approvalStatus` | Not `match` properties — matches nothing | Pin with `includeProjectIds` (governance API page). Criteria: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds` |
+| Scoping by tag name or `modelTypes` | `modelTypes` is not in the enum (legacy writes auto-convert to `tagIds`); non-UUID values are rejected | `tagIds` of project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in` (any) or `notIn` (none) |
+| Sending `includeProjectIds: []` so `match` still covers existing projects | The key, even empty, is the pin mode in the docs — no existing project is listed, so all stay out | Omit the key for criteria-only scope. To pin, list every existing project that should stay linked |
+| Building a selector `PUT` from the frameworks list | That list omits `includeProjectIds`, so the replacement selector drops the picks | Read `GET /frameworks/{id}` and send `includeProjectIds` back. Do not send read-only `matchProjectsCreatedAfter` (400) |
 | `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
-| `autoCreateTestRuleIds: []` with `autoCreateTests` on | 400 | Send `null` for every auto-creatable rule, or a non-empty list of this framework's own `test_setup` rule ids. A create POST has no rules yet — set the ids on a later PUT, after they are attached |
-| Expecting those tests from framework POST, on a disabled framework, or in the PUT response | Nothing is created then | The job runs after a PUT that leaves an **enabled** framework with the switch on, and as projects join. A rule with a `blocker` (a column, parameters, a reference dataset for drift, an unsupported subtype, no default threshold) stays manual |
+| Expecting auto-created tests from framework POST, a disabled framework, or the PUT response | Nothing is created then | The job runs after a PUT that leaves an **enabled** framework with `autoCreateTests` on. A create POST has no rules yet, so a subset's `autoCreateTestRuleIds` goes on a later PUT. Hand-build only rules whose `blocker` is set (`requires_column`, `requires_parameters`, `requires_reference_dataset`, `unsupported_subtype`, `no_default_threshold`) |
 | Rule create with only `name` | 400 (scope/type required) | Include `scope` and `type` |
 | Evidence POST with the wrong field, or an extra field (e.g. `fileName`) | 400 (field required / "Unknown field") | Send exactly one field matching `evidenceType`: `storageUri`/`url`/`text`, nothing else |
 | Uploading to the presigned URL with `PUT` or a raw body | 405 / 415 | POST as `multipart/form-data` (`curl -F "file=@..."`) |
