@@ -31,19 +31,16 @@ authoritative — cross-check the governance docs pages, not the spec.
 - **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` (create needs only `name`) ·
   `GET|PUT|DELETE /frameworks/{id}` (only custom frameworks delete; built-ins are `immutable` with a
   non-null `builtInSlug`) · `GET /frameworks/{id}/projects` · `GET /frameworks/{id}/project-rule-stats`.
-- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector`. Picks
-  (`includeProjectIds`), `applyToFutureProjects`, and `matchProjectsCreatedAfter`:
+- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector`. Picks,
+  future-project criteria, and the selector round-trip:
   https://docs.openlayer.com/governance/api-access.md (UI:
-  https://docs.openlayer.com/governance/activate-framework.md). A selector that only carries `match`
-  is unchanged: criteria are ANDed and apply to every project, existing and future (`[]`/null = all).
-  Omit `includeProjectIds` for criteria-only scope. Sending the key, even `[]`, pins: an empty list
-  leaves every existing project unlisted. `property` is `name`, `ownerId`, `taskType`, `riskLevel`,
-  `riskTotalScore`, or `tagIds` (project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`;
-  `operator` `in` = any, `notIn` = none; `equals`/`notEquals` fold into those; other operators and
-  non-UUID values are rejected). `modelTypes` is not in the enum (legacy writes are auto-converted to `tagIds`). `id` and
-  `approvalStatus` are not `match` properties. `GET` returns only the explicit picks in
-  `includeProjectIds`, not projects that joined through `match` — a read-modify-write must put those
-  into `includeProjectIds` or they are unpinned; omit `projectSelector` to leave scope alone.
+  https://docs.openlayer.com/governance/activate-framework.md). `match` criteria are ANDed. With no
+  `includeProjectIds`, an empty or null `match` applies to every project. `property` is `name`,
+  `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, or `tagIds` (project tag UUIDs from
+  `GET /workspaces/{workspaceId}/project-tags`; `operator` `in` = any, `notIn` = none;
+  `equals`/`notEquals` fold into those; other operators and non-UUID values are rejected).
+  `modelTypes` is not in the enum (legacy writes are auto-converted to `tagIds`). `id` and
+  `approvalStatus` are not `match` properties.
 - **Rules:** `GET|POST /workspaces/{workspaceId}/rules` (create requires `name`, `scope`
   [`workspace`|`project`], `type` [`evidence`|`platform`]) · `POST /workspaces/{workspaceId}/rules/batch`
   (body is a **bare JSON array**, not `{items:[...]}`) · `GET|PUT|DELETE /rules/{id}`. A `platform` rule
@@ -102,8 +99,7 @@ For a `test_setup` rule, flip `autoCreateTests` instead of hand-building tests. 
 | Activating a framework but not scoping it to projects | No checklist appears | Set `enabled` + a `projectSelector` on the framework |
 | `match` on `id` or `approvalStatus` | Not `match` properties — matches nothing | Pin with `includeProjectIds` (governance API page). Criteria: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds` |
 | Scoping by tag name or `modelTypes` | `modelTypes` is not in the enum (legacy writes auto-convert to `tagIds`); non-UUID values are rejected | `tagIds` of project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in` (any) or `notIn` (none) |
-| Sending `includeProjectIds: []` so `match` still covers existing projects | The key, even empty, is the pin mode in the docs — no existing project is listed, so all stay out | Omit the key for criteria-only scope. To pin, list every existing project that should stay linked |
-| `PUT` that writes `projectSelector` back from a read | `includeProjectIds` is only the explicit picks (the frameworks list omits the field), so match-joined projects are unpinned | Add those projects (e.g. from `GET /frameworks/{id}/projects`) to `includeProjectIds`, or omit `projectSelector` to leave scope alone |
+| Read-modify-write of `projectSelector` | Silently unpins projects that joined through `match` | Omit `projectSelector` to keep the current scope (https://docs.openlayer.com/governance/api-access.md) |
 | `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
