@@ -31,12 +31,24 @@ authoritative — cross-check the governance docs pages, not the spec.
 - **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` (create needs only `name`) ·
   `GET|PUT|DELETE /frameworks/{id}` (only custom frameworks delete; built-ins are `immutable` with a
   non-null `builtInSlug`) · `GET /frameworks/{id}/projects` · `GET /frameworks/{id}/project-rule-stats`.
-- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector` of shape
-  `{"match": [{"property": ..., "value": ...}]}` (criteria ANDed; `[]`/null = all projects). `property`
-  is a fixed enum: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds`
-  (project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in`),
-  `modelTypes` (deprecated — matches tag names, case-insensitive; use `tagIds`). There is **no**
-  `id` or `approvalStatus` — scope "by project" via `name`/`ownerId`.
+- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector`. A selector that
+  only carries `match` is unchanged: criteria are ANDed and apply to every project, existing and
+  future (`[]`/null = all). `property` is `name`, `ownerId`, `taskType`, `riskLevel`,
+  `riskTotalScore`, or `tagIds` (project tag UUIDs from
+  `GET /workspaces/{workspaceId}/project-tags`; `operator` `in` = any, `notIn` = none;
+  `equals`/`notEquals` are folded into those; other operators and non-UUID values are rejected).
+  `modelTypes` is legacy and auto-converted to `tagIds` on write. Pick specific projects by sending
+  `includeProjectIds` (UUID array, schema default `[]`), not `match` on `id`. Omitting the key keeps
+  criteria-only scope:
+  `{"match": [...], "includeProjectIds": ["<project-uuid>"], "applyToFutureProjects": true}`.
+  Sending that key (even `[]`) pins the projects that exist then: listed ones are in, every other
+  existing project is out whatever `match` says, and `match` only reaches projects created
+  afterwards. `applyToFutureProjects` (default `true`) is whether `match` applies at all; `false`
+  links only `includeProjectIds`. Do not send `matchProjectsCreatedAfter` — the server stamps it
+  when the request carries `includeProjectIds`, and sending it is 400 read-only. `PUT` replaces the
+  whole selector, so a later PUT that omits `includeProjectIds` drops the picks (the frameworks
+  list omits that field; only `GET /frameworks/{id}` returns it). `id` and `approvalStatus` are
+  still not `match` properties.
 - **Rules:** `GET|POST /workspaces/{workspaceId}/rules` (create requires `name`, `scope`
   [`workspace`|`project`], `type` [`evidence`|`platform`]) · `POST /workspaces/{workspaceId}/rules/batch`
   (body is a **bare JSON array**, not `{items:[...]}`) · `GET|PUT|DELETE /rules/{id}`. A `platform` rule
@@ -80,8 +92,10 @@ a byproduct of the integration work — then read `rule-results` to confirm it f
 | ------- | ------- | --- |
 | Assuming governance is UI-only | Misses automation | There is a full REST API (frameworks/rules/rule-results/evidence) |
 | Activating a framework but not scoping it to projects | No checklist appears | Set `enabled` + a `projectSelector` on the framework |
-| `projectSelector` using `id` or `approvalStatus` | Matches nothing silently | Use the property enum: `name`/`ownerId`/`taskType`/`riskLevel`/`riskTotalScore`/`tagIds`/`modelTypes` (deprecated — matches tag names) |
-| Scoping a framework by tag name | `modelTypes` is deprecated (name match) | Use `tagIds` with project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags` (`operator` `in`) |
+| `match` on `id` or `approvalStatus` | Not `match` properties — matches nothing | Pin projects with `includeProjectIds`. Criteria: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds` |
+| Scoping by tag name or `modelTypes` | `modelTypes` is not in the enum (legacy; auto-converted to `tagIds`); non-UUID values are rejected | `tagIds` of project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in` (any) or `notIn` (none) |
+| Sending `includeProjectIds` (even `[]`) to add projects on top of `match` | Pins that moment: listed IDs are in, every other existing project is out, and `match` only hits projects created afterwards | Omit the key for criteria-only scope; to pin, list every existing project that should stay linked |
+| `PUT /frameworks/{id}` that omits `includeProjectIds` | Replaces the whole selector and drops the picks. The frameworks list omits the field | Read `GET /frameworks/{id}` and send the full selector back, including `includeProjectIds` (never echo read-only `matchProjectsCreatedAfter`) |
 | `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
