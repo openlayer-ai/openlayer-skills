@@ -58,6 +58,15 @@ authoritative — cross-check the governance docs pages, not the spec.
   `monitoring_traces_enabled`, `monitoring_sessions_enabled`, `monitoring_users_enabled`,
   `monitoring_notifications_enabled`, `test_setup`, `project_risk_level_set`, `project_description_set`,
   `project_owner_set`.
+- **Auto-create `test_setup` tests:** `PUT /frameworks/{id}` accepts `autoCreateTests` (bool, default
+  `false`) and `autoCreateTestRuleIds` (`uuid[]` | `null` — a subset of this framework's own
+  `test_setup` rules; `null` means every auto-creatable one). On an **enabled** framework the server
+  asynchronously creates the tests those rules need in every project the framework applies to (the
+  current ones when the switch, the subset, or `enabled` changes, and projects as they join), skipping
+  tests the project already has. The tests are built so the `test_setup` rule result passes. See
+  what it can create with `GET /frameworks/{id}/auto-creatable-tests?taskType=…` (`autoCreatable`,
+  `creatableTaskTypes`, `blocker`, `usesLlmJudge` per rule). A later PUT that omits `autoCreateTests`
+  leaves the stored value.
 - **Attach rules to a framework:** rules are created standalone on the workspace, then linked via
   `PATCH /frameworks/{id}/rules` with `{"ops": [{"op": "attach", "ruleId": "<id>"}]}` (`"op": "detach"`
   to remove). Passing `frameworkId` in the rule-create body is **silently ignored** — you must PATCH.
@@ -85,6 +94,9 @@ Platform rules are satisfied **by code you can write**: set up monitoring
 (`references/monitoring-instrumentation.md`), add CI/CD eval gates (`references/ci-cd.md`), and create
 the relevant tests (`references/tests.md`, e.g. PII / bias / hallucination). That turns compliance into
 a byproduct of the integration work — then read `rule-results` to confirm it flipped to satisfied.
+For a `test_setup` rule, check `GET /frameworks/{id}/auto-creatable-tests` and turn `autoCreateTests`
+on instead of hand-building tests for rules with no `blocker`; create only the blocked ones
+(`references/tests.md`).
 
 ## Common Mistakes
 
@@ -99,6 +111,8 @@ a byproduct of the integration work — then read `rule-results` to confirm it f
 | `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
+| `autoCreateTestRuleIds: []` with `autoCreateTests` on | 400 | Send `null` for every auto-creatable rule, or a non-empty list of this framework's own `test_setup` rule ids. A create POST has no rules yet — set the ids on a later PUT, after they are attached |
+| Expecting those tests from framework POST, on a disabled framework, or in the PUT response | Nothing is created then | The job runs after a PUT that leaves an **enabled** framework with the switch on, and as projects join. A rule with a `blocker` (a column, parameters, a reference dataset for drift, an unsupported subtype, no default threshold) stays manual |
 | Rule create with only `name` | 400 (scope/type required) | Include `scope` and `type` |
 | Evidence POST with the wrong field, or an extra field (e.g. `fileName`) | 400 (field required / "Unknown field") | Send exactly one field matching `evidenceType`: `storageUri`/`url`/`text`, nothing else |
 | Uploading to the presigned URL with `PUT` or a raw body | 405 / 415 | POST as `multipart/form-data` (`curl -F "file=@..."`) |
