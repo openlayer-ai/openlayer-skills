@@ -17,6 +17,5 @@
     "tracing",
     "evaluation",
     "testing"
-  ],
-  "icon": ".claude-plugin/icon.png"
+  ]
 }
