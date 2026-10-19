@@ -77,6 +77,12 @@ Once installed, the agent uses the skill automatically when relevant — for exa
 - Debugging failing tests via the Openlayer MCP fix-loop
 - Querying projects, pipelines, test results, or looking up Openlayer docs
 
+## MCP server
+
+The plugin also connects your agent to the hosted [Openlayer MCP server](https://docs.openlayer.com/openlayer-mcp) at `https://mcp.openlayer.com/mcp`. The first time a tool is used, you sign in to Openlayer with OAuth and pick a workspace. The agent can then read projects, data sources, traces, tests, results, and governance rules in that workspace, and create or update them when you ask. Write and delete tools ask for confirmation.
+
+Tool calls go only to Openlayer's API. Nothing is sent anywhere else. See the [privacy policy](https://www.openlayer.com/privacy-policy). Self hosted deployments should point the server at their own URL, as the [MCP docs](https://docs.openlayer.com/openlayer-mcp#self-hosted-openlayer) describe.
+
 ## Feedback & Requests
 
 Something not working as expected, or want a new use case covered? Open an issue at https://github.com/openlayer-ai/openlayer-skills/issues or email support@openlayer.com.
