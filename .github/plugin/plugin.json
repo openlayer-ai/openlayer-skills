@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "openlayer",
+  "version": "0.5.3",
+  "description": "Skills for working with Openlayer, the AI evaluation and observability platform \u2014 tracing/monitoring, offline testing, evals, and CI/CD gates.",
+  "author": {
+    "name": "Openlayer",
+    "email": "support@openlayer.com",
+    "url": "https://www.openlayer.com"
+  },
+  "homepage": "https://docs.openlayer.com/openlayer-skills",
+  "repository": "https://github.com/openlayer-ai/openlayer-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "openlayer",
+    "llm",
+    "observability",
+    "tracing",
+    "evaluation",
+    "testing",
+    "mcp"
+  ]
+}

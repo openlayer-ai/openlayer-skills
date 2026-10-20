@@ -105,6 +105,7 @@ def check_version_lockstep() -> None:
         REPO / ".claude-plugin/plugin.json",
         REPO / ".claude-plugin/marketplace.json",
         REPO / ".cursor-plugin/plugin.json",
+        REPO / ".github/plugin/plugin.json",
     ]
     versions = {}
     for f in files:

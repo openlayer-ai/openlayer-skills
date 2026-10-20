@@ -27,7 +27,7 @@ claude plugin install openlayer@openlayer
 
 ### GitHub Copilot
 
-GitHub Copilot reads the same plugin manifest as Claude Code.
+GitHub Copilot reads `.github/plugin/plugin.json` and the same skills and `.mcp.json` as Claude Code.
 
 In **VS Code**, add the marketplace to your `settings.json`, then install **Openlayer** from the Extensions view (search `@agentPlugins`):
 
