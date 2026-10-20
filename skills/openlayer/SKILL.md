@@ -12,13 +12,7 @@ description: >-
   OPENLAYER_API_KEY, OPENLAYER_INFERENCE_PIPELINE_ID, openlayer.json, tests.json, an inference pipeline,
   "openlayer push", openlayer-mcp, trace_openai / trace_anthropic, Openlayer guardrails, or LLM evals.
 license: Apache-2.0
-allowed-tools:
-  - WebFetch(domain:docs.openlayer.com)
-  - WebFetch(domain:openlayer.com)
-  - Bash(openlayer whoami*)
-  - Bash(openlayer projects*)
-  - Bash(openlayer inspect*)
-  - Bash(openlayer validate*)
+allowed-tools: WebFetch(domain:docs.openlayer.com) WebFetch(domain:openlayer.com)
 ---
 
 # Openlayer
