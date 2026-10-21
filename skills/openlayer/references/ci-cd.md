@@ -8,7 +8,7 @@ description: Gate CI/CD on Openlayer evaluation results — run an offline commi
 Block merges when a model/app version fails its Openlayer tests. This builds on development mode
 (`references/development-setup.md`).
 
-Docs: https://docs.openlayer.com/guides/gh-actions.md and https://docs.openlayer.com/guides/cli-push.md
+Docs: https://docs.openlayer.com/guides/gh-actions.md, https://docs.openlayer.com/guides/cli-push.md, and https://docs.openlayer.com/api-reference/cli/commands/push.md
 
 ## Checklist
 
@@ -19,9 +19,11 @@ Docs: https://docs.openlayer.com/guides/gh-actions.md and https://docs.openlayer
       and hang). Set env vars instead: `OPENLAYER_API_KEY`, `OPENLAYER_PROJECT_ID` (the target project,
       replaces `link`), and `OPENLAYER_BASE_URL` if self-hosted.
 - [ ] Push and **wait** so results gate the job:
-      `openlayer push -m "CI: $GIT_SHA"` — `--wait` is on by default (don't pass `--wait=false`); the
-      exit code reflects test pass/fail; let a non-zero exit fail the build. (Agentic CI alternative:
-      MCP `push_commit` + `wait_for_commit_results`.)
+      `openlayer push -m "CI: $GIT_SHA"` — `--wait` is on by default (don't pass `--wait=false`).
+      A non-zero exit means tests failed, or the commit is still processing after the 10-minute
+      wait (the commit keeps processing; check `openlayer inspect <commit id>` or the printed link).
+      Let a non-zero exit fail the build. (Agentic CI alternative: MCP `push_commit` +
+      `wait_for_commit_results`.)
 - [ ] Store `OPENLAYER_API_KEY` as a CI secret; never echo it. Add any provider keys the model needs
       (OpenAI/Anthropic/etc.) as secrets too.
 - [ ] Verify by opening a real PR and watching the check.
@@ -40,6 +42,7 @@ Docs: https://docs.openlayer.com/guides/gh-actions.md and https://docs.openlayer
 | ------- | ------- | --- |
 | `push --wait=false` in a gate | Build passes before results exist | Keep the default `--wait` (or MCP `wait_for_commit_results`) |
 | Not failing on failed tests | Gate is cosmetic | Propagate the non-zero exit / check results and fail |
+| Treating a timeout exit as failed tests | After 10 minutes `push` exits 1 while the commit keeps processing | Follow the printed link or `openlayer inspect <commit id>` — https://docs.openlayer.com/api-reference/cli/commands/push.md |
 | API key echoed in logs | Leak | Use CI secrets; never print the key |
 | Missing provider secrets (full model) | Output generation fails in CI | Add OpenAI/Anthropic/etc. keys as secrets |
 | Forked PR can't access secrets | Check fails to run | Use a trusted trigger or document it |

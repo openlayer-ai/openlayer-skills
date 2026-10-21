@@ -63,7 +63,7 @@ SDK given the CLI form gets 404s or silently publishes nothing.
 
 | Command | Use |
 | --- | --- |
-| `openlayer push -m "msg"` | Push a commit and wait for results (`--wait` defaults to true; `-w=false` to skip, `-t` to tail logs) |
+| `openlayer push -m "msg"` | Push a commit and wait for results (`--wait` defaults to true; `-w=false` to skip, `-t` for plain status lines, no spinner — useful in CI logs) |
 | `openlayer validate` | Validate `openlayer.json` + `tests.json` before pushing |
 | `openlayer inspect <versionID>` | Inspect a commit's details |
 | `openlayer export <pipelineId> <start> <end>` | Export monitoring data from a pipeline |
