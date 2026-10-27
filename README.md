@@ -79,7 +79,9 @@ Once installed, the agent uses the skill automatically when relevant — for exa
 
 ## MCP server
 
-The plugin also connects your agent to the hosted [Openlayer MCP server](https://docs.openlayer.com/openlayer-mcp) at `https://mcp.openlayer.com/mcp`. The first time a tool is used, you sign in to Openlayer with OAuth and pick a workspace. The agent can then read projects, data sources, traces, tests, results, and governance rules in that workspace, and create or update them when you ask. Write and delete tools ask for confirmation.
+The plugin also connects your agent to the hosted [Openlayer MCP server](https://docs.openlayer.com/openlayer-mcp) at `https://mcp.openlayer.com/mcp` (US accounts on `app.openlayer.com`; this is the `.mcp.json` default). The first time a tool is used, you sign in to Openlayer with OAuth and pick a workspace. The agent can then read projects, data sources, traces, tests, results, and governance rules in that workspace, and create or update them when you ask. Write and delete tools ask for confirmation.
+
+EU accounts (`eu.openlayer.com`) must use `https://mcp-eu.openlayer.com/mcp`. Each hosted MCP server only accepts tokens from its own region's API, so an EU account pointed at the US server fails OAuth. Outside the regional cloud hosts the default stays `https://mcp.openlayer.com/mcp`.
 
 Tool calls go only to Openlayer's API. Nothing is sent anywhere else. See the [privacy policy](https://www.openlayer.com/privacy-policy). Self hosted deployments should point the server at their own URL, as the [MCP docs](https://docs.openlayer.com/openlayer-mcp#self-hosted-openlayer) describe.
 

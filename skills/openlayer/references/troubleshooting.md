@@ -96,3 +96,4 @@ concluding it's a platform bug — the SDKs change often.
 | Wrapping the publish call in try/except to silence it | Failures become invisible instead of fixed | Let it raise until the cause is understood |
 | Assuming the app inherits your shell's env | The process may load nothing at all | Verify from inside the running app |
 | Debugging the SDK when the CLI is what's failing (or vice-versa) | Wrong plane entirely | Dev/push problems → `references/cli.md`; trace problems → `references/monitoring-instrumentation.md` |
+| EU account (`eu.openlayer.com`) but MCP points at `https://mcp.openlayer.com/mcp` | OAuth/token auth fails — each hosted MCP server only accepts tokens from its own region's API | Use `https://mcp-eu.openlayer.com/mcp` |

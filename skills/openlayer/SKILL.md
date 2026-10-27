@@ -52,7 +52,7 @@ the SDK resource map are in `references/data-access.md`.
 1. **SDK (default).** Use the typed client: `Openlayer(api_key=...)` (Python) or `new Openlayer({ apiKey })` (TS).
 2. **Raw REST** via the OpenAPI as a last resort.
 
-(If the Openlayer MCP server is connected, which this plugin does by default, prefer its tools for reading and changing workspace data.)
+(If the Openlayer MCP server is connected, which this plugin does by default, prefer its tools for reading and changing workspace data. The bundled server is the US host `https://mcp.openlayer.com/mcp`; an EU account on `eu.openlayer.com` must use `https://mcp-eu.openlayer.com/mcp` — the US host rejects its tokens. See `references/troubleshooting.md`.)
 
 > The Openlayer **CLI is NOT the data-access tool** — it is the development/push workflow tool
 > (`openlayer push`, `validate`, `export`, …). See `references/cli.md`.
