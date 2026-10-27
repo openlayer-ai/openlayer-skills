@@ -10,7 +10,7 @@ projects, each scoped project gets a compliance checklist, and engineering work 
 It is driveable **both via the UI and a full REST API**.
 
 Docs (concepts): https://docs.openlayer.com/governance/overview.md and the per-topic pages
-(`activate-framework`, `build-custom-framework`, `platform-rules`, `evidence-based-rules`,
+(`activate-framework`, `api-access`, `build-custom-framework`, `platform-rules`, `evidence-based-rules`,
 `project-compliance`). Confirm request/response schemas from the API reference / OpenAPI.
 
 ## Two kinds of rules
@@ -31,10 +31,16 @@ authoritative — cross-check the governance docs pages, not the spec.
 - **Frameworks:** `GET|POST /workspaces/{workspaceId}/frameworks` (create needs only `name`) ·
   `GET|PUT|DELETE /frameworks/{id}` (only custom frameworks delete; built-ins are `immutable` with a
   non-null `builtInSlug`) · `GET /frameworks/{id}/projects` · `GET /frameworks/{id}/project-rule-stats`.
-- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector` of shape
-  `{"match": [{"property": ..., "value": ...}]}` (criteria ANDed; `[]`/null = all projects). `property`
-  is a fixed enum: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `modelTypes`
-  (there is **no** `id` or `approvalStatus` — scope "by project" via `name`/`ownerId`).
+- **Scope / activate:** `PUT /frameworks/{id}` with `enabled` + a `projectSelector`. Picks,
+  future-project criteria, and the selector round-trip:
+  https://docs.openlayer.com/governance/api-access.md (UI:
+  https://docs.openlayer.com/governance/activate-framework.md). `match` criteria are ANDed. With no
+  `includeProjectIds`, an empty or null `match` applies to every project. `property` is `name`,
+  `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, or `tagIds` (project tag UUIDs from
+  `GET /workspaces/{workspaceId}/project-tags`; `operator` `in` = any, `notIn` = none;
+  `equals`/`notEquals` fold into those; other operators and non-UUID values are rejected).
+  `modelTypes` is not in the enum (legacy writes are auto-converted to `tagIds`). `id` and
+  `approvalStatus` are not `match` properties.
 - **Rules:** `GET|POST /workspaces/{workspaceId}/rules` (create requires `name`, `scope`
   [`workspace`|`project`], `type` [`evidence`|`platform`]) · `POST /workspaces/{workspaceId}/rules/batch`
   (body is a **bare JSON array**, not `{items:[...]}`) · `GET|PUT|DELETE /rules/{id}`. A `platform` rule
@@ -44,6 +50,16 @@ authoritative — cross-check the governance docs pages, not the spec.
   `monitoring_traces_enabled`, `monitoring_sessions_enabled`, `monitoring_users_enabled`,
   `monitoring_notifications_enabled`, `test_setup`, `project_risk_level_set`, `project_description_set`,
   `project_owner_set`.
+- **Auto-create `test_setup` tests:** `autoCreateTests` and `autoCreateTestRuleIds` on
+  `PUT /frameworks/{id}`, and the UI review:
+  https://docs.openlayer.com/governance/api-access.md and
+  https://docs.openlayer.com/governance/activate-framework.md. Nothing is created from framework POST,
+  on a disabled framework, or in the PUT response. The job runs after a PUT that leaves an **enabled**
+  framework with the switch on, including when the rule subset or `enabled` changes. A PUT that omits
+  `autoCreateTests` keeps the stored value.
+  `GET /frameworks/{id}/auto-creatable-tests?taskType=…` returns `autoCreatable`, `creatableTaskTypes`,
+  `blocker` (`requires_column`, `requires_parameters`, `requires_reference_dataset`,
+  `unsupported_subtype`, `no_default_threshold`), and `usesLlmJudge` per rule.
 - **Attach rules to a framework:** rules are created standalone on the workspace, then linked via
   `PATCH /frameworks/{id}/rules` with `{"ops": [{"op": "attach", "ruleId": "<id>"}]}` (`"op": "detach"`
   to remove). Passing `frameworkId` in the rule-create body is **silently ignored** — you must PATCH.
@@ -71,6 +87,9 @@ Platform rules are satisfied **by code you can write**: set up monitoring
 (`references/monitoring-instrumentation.md`), add CI/CD eval gates (`references/ci-cd.md`), and create
 the relevant tests (`references/tests.md`, e.g. PII / bias / hallucination). That turns compliance into
 a byproduct of the integration work — then read `rule-results` to confirm it flipped to satisfied.
+For a `test_setup` rule, flip `autoCreateTests` instead of hand-building tests. Check
+`GET /frameworks/{id}/auto-creatable-tests` and create only rules that return a `blocker`
+(`references/tests.md`).
 
 ## Common Mistakes
 
@@ -78,10 +97,13 @@ a byproduct of the integration work — then read `rule-results` to confirm it f
 | ------- | ------- | --- |
 | Assuming governance is UI-only | Misses automation | There is a full REST API (frameworks/rules/rule-results/evidence) |
 | Activating a framework but not scoping it to projects | No checklist appears | Set `enabled` + a `projectSelector` on the framework |
-| `projectSelector` using `id` or `approvalStatus` | Matches nothing silently | Use the property enum: `name`/`ownerId`/`taskType`/`riskLevel`/`riskTotalScore`/`modelTypes` |
+| `match` on `id` or `approvalStatus` | Not `match` properties — matches nothing | Pin with `includeProjectIds` (governance API page). Criteria: `name`, `ownerId`, `taskType`, `riskLevel`, `riskTotalScore`, `tagIds` |
+| Scoping by tag name or `modelTypes` | `modelTypes` is not in the enum (legacy writes auto-convert to `tagIds`); non-UUID values are rejected | `tagIds` of project tag UUIDs from `GET /workspaces/{workspaceId}/project-tags`, `operator` `in` (any) or `notIn` (none) |
+| Read-modify-write of `projectSelector` | Silently unpins projects that joined through `match` | Omit `projectSelector` to keep the current scope (https://docs.openlayer.com/governance/api-access.md) |
 | `/rules/batch` body as `{items:[...]}` | 400 "is not of type array" | Send a bare JSON array of rule objects |
 | Setting `frameworkId` in the rule-create body to link it | Silently ignored — rule stays unattached | Create the rule, then `PATCH /frameworks/{id}/rules` with `{"ops":[{"op":"attach","ruleId":...}]}` |
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
+| Expecting auto-created tests from framework POST, a disabled framework, or the PUT response | Nothing is created then | The job runs after a PUT that leaves an **enabled** framework with `autoCreateTests` on. A create POST has no rules yet, so a subset's `autoCreateTestRuleIds` goes on a later PUT. Hand-build only rules whose `blocker` is set (`requires_column`, `requires_parameters`, `requires_reference_dataset`, `unsupported_subtype`, `no_default_threshold`) |
 | Rule create with only `name` | 400 (scope/type required) | Include `scope` and `type` |
 | Evidence POST with the wrong field, or an extra field (e.g. `fileName`) | 400 (field required / "Unknown field") | Send exactly one field matching `evidenceType`: `storageUri`/`url`/`text`, nothing else |
 | Uploading to the presigned URL with `PUT` or a raw body | 405 / 415 | POST as `multipart/form-data` (`curl -F "file=@..."`) |

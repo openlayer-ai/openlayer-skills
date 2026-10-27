@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "openlayer",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Skills for working with Openlayer, the AI evaluation and observability platform \u2014 tracing/monitoring, offline testing, evals, and CI/CD gates.",
   "author": {
     "name": "Openlayer",
