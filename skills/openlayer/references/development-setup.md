@@ -78,7 +78,7 @@ openlayer validate           # check openlayer.json + tests.json before pushing
 export OPENLAYER_API_KEY=...
 export OPENLAYER_PROJECT_ID=...      # target project id (replaces interactive `openlayer link`)
 export OPENLAYER_BASE_URL=...        # self-hosted/local only
-openlayer push -m "message"          # waits for results by default (--wait); add -t to tail logs
+openlayer push -m "message"          # waits for results by default (--wait); -t prints plain status lines (no spinner)
 ```
 
 `openlayer login` and `openlayer link` are interactive (TTY-only) and will hang an agent — skip them

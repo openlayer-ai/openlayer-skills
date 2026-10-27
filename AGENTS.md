@@ -20,9 +20,10 @@ The skills-maintainer bot re-reads `NORI.md` on every wake; coworkers edit that 
 
 ## Plugin Version Bumps
 
-The repo ships to two marketplaces, each with its own manifest:
+The repo ships to three marketplaces, each with its own manifest:
 - `.claude-plugin/plugin.json` (Claude Code) and `.claude-plugin/marketplace.json`
 - `.cursor-plugin/plugin.json` (Cursor)
+- `.github/plugin/plugin.json` (GitHub Copilot / Agent Plugins)
 
 Keep the `version` fields **in lockstep** — bump them together in the same PR (semver: patch for fixes/clarifications, minor for new capability, major for breaking renames/removals).
 

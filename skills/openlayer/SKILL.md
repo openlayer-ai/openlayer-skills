@@ -12,14 +12,7 @@ description: >-
   OPENLAYER_API_KEY, OPENLAYER_INFERENCE_PIPELINE_ID, openlayer.json, tests.json, an inference pipeline,
   "openlayer push", openlayer-mcp, trace_openai / trace_anthropic, Openlayer guardrails, or LLM evals.
 license: Apache-2.0
-allowed-tools:
-  - WebFetch(domain:docs.openlayer.com)
-  - WebFetch(domain:openlayer.com)
-  - Bash(openlayer whoami*)
-  - Bash(openlayer projects*)
-  - Bash(openlayer inspect*)
-  - Bash(openlayer validate*)
-  - Bash(curl *docs.openlayer.com/*)
+allowed-tools: WebFetch(domain:docs.openlayer.com) WebFetch(domain:openlayer.com)
 ---
 
 # Openlayer
@@ -59,7 +52,7 @@ the SDK resource map are in `references/data-access.md`.
 1. **SDK (default).** Use the typed client: `Openlayer(api_key=...)` (Python) or `new Openlayer({ apiKey })` (TS).
 2. **Raw REST** via the OpenAPI as a last resort.
 
-(If the Openlayer MCP server happens to be connected, prefer its tools — covered in a separate skill.)
+(If the Openlayer MCP server is connected, which this plugin does by default, prefer its tools for reading and changing workspace data.)
 
 > The Openlayer **CLI is NOT the data-access tool** — it is the development/push workflow tool
 > (`openlayer push`, `validate`, `export`, …). See `references/cli.md`.
