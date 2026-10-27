@@ -22,7 +22,7 @@ client = OpenAI(base_url="https://your-gateway.example.com/v1", api_key="sk-olga
 resp = client.responses.create(model="gpt-4o-mini", input="Hello!")
 ```
 
-- **Endpoint is the Responses API (`/v1/responses`)**, not `/v1/chat/completions`. Don't assume the chat-completions path.
+- `/v1/chat/completions` is served on the `openai` incoming format as a native passthrough for provider formats `openai` and `azure_openai` (the request goes upstream as sent; the response or stream comes back as the provider sent it). Cross-format routing to Anthropic works only on `/v1/responses`. A rule that routes `/v1/chat/completions` to an `anthropic` provider is refused with a 503 naming the rule.
 - Auth header: `Authorization: Bearer sk-olga-…` (or `X-Api-Key`). Never put the *admin* key in app code.
 - First request: https://docs.openlayer.com/gateway/make-your-first-request.md
 
@@ -33,7 +33,7 @@ resp = client.responses.create(model="gpt-4o-mini", input="Hello!")
 - **Budgets & limits** (cost/requests/tokens, per key or team, daily/weekly/monthly) — UI; hitting a cap returns `429` and the request is not forwarded: https://docs.openlayer.com/gateway/budgets-and-limits.md
 - **Guardrails** (PII / prompt-injection; input/output/both; block or redact): https://docs.openlayer.com/gateway/guardrails.md — see `references/guardrails.md`. Output guardrails skip streamed responses.
 - **Observability**: set an Openlayer API key + inference pipeline id in the gateway config and every request is published as a trace — no SDK in the app: https://docs.openlayer.com/gateway/observability.md
-- **Model routing / use any model**: route OpenAI-format requests to Anthropic (and back) with auto-translation; images/docs/web-search aren't translated (`501`): https://docs.openlayer.com/gateway/route-requests.md , /gateway/use-any-model.md
+- **Model routing / use any model**: route `/v1/responses` to Anthropic (and back) with auto-translation; images/docs/web-search aren't translated (`501`): https://docs.openlayer.com/gateway/route-requests.md , /gateway/use-any-model.md
 
 ## Gateway vs SDK tracing
 
@@ -44,7 +44,7 @@ SDK tracing = finer-grained custom spans via `@trace`. Don't run both for the sa
 
 | Mistake | Problem | Fix |
 | ------- | ------- | --- |
-| Calling `/v1/chat/completions` | Gateway uses the Responses API | Use `/v1/responses` (or the client's `.responses.create`) |
+| Routing `/v1/chat/completions` to an `anthropic` provider | Refused with a 503 naming the rule; Chat Completions is not translated cross-format | Use `/v1/responses` for Anthropic models through an OpenAI-shaped API |
 | Using a provider key in the app | Bypasses the gateway | Use the gateway `sk-olga-…` key |
 | Putting the admin key in app code | Security risk | Admin key is for the portal only; ship issued API keys |
 | Adding SDK tracing on top of the gateway | Duplicate traces | Pick one path per call |
