@@ -81,7 +81,7 @@ Preference order: search (when topic is fuzzy) → `llms.txt` lookup → fetch t
 | Author a custom metric                                  | `references/custom-metrics.md`             |
 | Set up compliance frameworks / governance               | `references/governance.md`                 |
 | Route LLM calls through the Openlayer Gateway           | `references/gateway.md`                    |
-| Subscribe to platform events via webhooks               | `references/webhooks.md`                   |
+| Subscribe to platform events via webhooks (project/governance sync) | `references/webhooks.md`                   |
 | Publish or stream inference rows directly               | `references/data-streaming.md`             |
 | Gate CI/CD on eval results                              | `references/ci-cd.md`                      |
 | Query data programmatically                             | `references/data-access.md`                |
