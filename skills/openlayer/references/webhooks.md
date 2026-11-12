@@ -1,6 +1,6 @@
 ---
 name: openlayer-webhooks
-description: Subscribe to Openlayer events (test created/updated/deleted, test-suite results) via signed webhooks, and verify signatures. Use when wiring Openlayer into external systems — alerting, CI/CD triggers, or syncing on test results instead of polling.
+description: Subscribe to Openlayer events (test created/updated/deleted, test-suite results, project and governance changes) via signed webhooks, and verify signatures. Use when wiring Openlayer into external systems — alerting, CI/CD triggers, or syncing test results and project/governance state instead of polling.
 ---
 
 # Openlayer Webhooks
@@ -27,6 +27,14 @@ require **workspace-admin** auth.
 Envelope: `{ "type": ..., "timestamp": ..., "data": {...} }`. For `tests.result.updated`, the counts and
 ids are nested under **`data.tests`**: `{ total, passing, failing, skipped, running, projectId,
 projectVersionId, inferencePipelineId }` (verified).
+
+`project.*` uses the same create/update `eventTypes[]`. UI groups **Projects** — `project.created`,
+`project.updated`, `project.deleted`, `project.restored` — and **Governance** — `project.intake.updated`,
+`project.risk.assessed`, `project.risk_exception.updated`, `project.lifecycle.changed`,
+`project.lifecycle.approved`. `data.project` is the full snapshot; upsert by `data.project.id`.
+Store the last applied `timestamp` per project and skip older events, dedupe on `webhook-id`, and
+treat `project.deleted` as a soft delete. Payloads:
+https://docs.openlayer.com/security/webhooks/events.md#project-and-governance-events
 
 > The endpoint **URL must be HTTPS for delivery.** A plain `http://` URL is *accepted at subscription
 > creation* but the delivery worker refuses it ("Refusing to deliver to non-HTTPS URL"), so deliveries
@@ -64,3 +72,4 @@ Deliveries expect a 2xx within ~10s; failures retry up to 3× with backoff. Dedu
 | `==` string compare on signatures | Timing-attack risk | Use `hmac.compare_digest` |
 | Ignoring retries | Duplicate processing | Dedupe on `webhook-id` |
 | Slow/non-2xx endpoint | Marked failed, retried | Respond 2xx fast; do work async |
+| Applying `project.*` deliveries in arrival order | An older retry overwrites a newer snapshot; `project.deleted` is reversible | Store the last applied `timestamp` per project and skip earlier events; dedupe on `webhook-id`; soft-delete on `project.deleted` |
