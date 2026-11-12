@@ -31,31 +31,10 @@ projectVersionId, inferencePipelineId }` (verified).
 `project.*` uses the same create/update `eventTypes[]`. UI groups **Projects** — `project.created`,
 `project.updated`, `project.deleted`, `project.restored` — and **Governance** — `project.intake.updated`,
 `project.risk.assessed`, `project.risk_exception.updated`, `project.lifecycle.changed`,
-`project.lifecycle.approved`.
-
-Every `project.*` `data` is `{ project, actorId, ...event-specific details }`. `project` is the full
-current snapshot: `id`, `workspaceId`, `name`, `description`, `taskType`, `creatorId`, `ownerId`, `tags`
-(sorted names), `lifecycleStage` (`{id, name}` or null), `retired` (bool), `risk` (`{level, totalScore,
-maxScore, scores: [{dimensionId, label, score}]}`), `intake` (`[{fieldId, label, type, value}]`),
-`dateCreated`, `dateUpdated`, `dateRetired`, `dateDeleted`, `links.app`. Upsert by `data.project.id`
-from any single delivery, in any order. Each delivery already has the whole record — do not replay
-history or call the API.
-
-Event-specific details:
-
-- `project.updated` — `changes: {field: {from, to}}`, only fields that changed (`dateUpdated` ignored).
-  Not sent when nothing changed. Fires on name, description, owner, and tags changes.
-- `project.lifecycle.changed` — `lifecycle: {kind, fromStage: {id, name}, toStage: {id, name}, reason}`.
-  `kind` is `advance`, `revert`, `retire`, or `reopen`. Retire has `toStage.id: null`; reopen has
-  `fromStage.id: null` (both read as stage name "Retired"). Also fires when a workspace
-  lifecycle-definition edit moves the project.
-- `project.lifecycle.approved` — `approval: {stage: {id, name}, note}`. On a final approval this is
-  enqueued before the resulting `project.lifecycle.changed`.
-- `project.created` fires for projects created in the app or by any integration. Rolled-back creations
-  send nothing.
-
-Sample projects never emit `project.*`. A workspace template edit (intake form, risk template, or
-lifecycle definition) emits no event of its own. Auth, signing, and HTTPS rules are unchanged.
+`project.lifecycle.approved`. `data.project` is the full snapshot; upsert by `data.project.id`.
+Store the last applied `timestamp` per project and skip older events, dedupe on `webhook-id`, and
+treat `project.deleted` as a soft delete. Payloads:
+https://docs.openlayer.com/security/webhooks/events.md#project-and-governance-events
 
 > The endpoint **URL must be HTTPS for delivery.** A plain `http://` URL is *accepted at subscription
 > creation* but the delivery worker refuses it ("Refusing to deliver to non-HTTPS URL"), so deliveries
@@ -93,7 +72,4 @@ Deliveries expect a 2xx within ~10s; failures retry up to 3× with backoff. Dedu
 | `==` string compare on signatures | Timing-attack risk | Use `hmac.compare_digest` |
 | Ignoring retries | Duplicate processing | Dedupe on `webhook-id` |
 | Slow/non-2xx endpoint | Marked failed, retried | Respond 2xx fast; do work async |
-| Treating `project.updated` as a full sync, or expecting it on every save | No-op saves send nothing; `changes` lists only fields that changed | Upsert `data.project` from any `project.*` delivery |
-| Building state by replaying events in order | Each delivery is a full snapshot; order does not matter | Upsert by `data.project.id`; do not replay history or call the API |
-| Expecting `project.*` for sample projects or template edits | Samples never emit; intake, risk, and lifecycle template edits emit nothing | Sync real projects only. A project moved by a lifecycle-definition edit still gets `project.lifecycle.changed` |
-| Assuming `toStage.id` is always set | Retire sets `toStage.id` to null; reopen sets `fromStage.id` to null (name "Retired") | Treat a null stage id as Retired |
+| Applying `project.*` deliveries in arrival order | An older retry overwrites a newer snapshot; `project.deleted` is reversible | Store the last applied `timestamp` per project and skip earlier events; dedupe on `webhook-id`; soft-delete on `project.deleted` |
