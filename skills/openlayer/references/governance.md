@@ -18,8 +18,10 @@ Docs (concepts): https://docs.openlayer.com/governance/overview.md and the per-t
 - **Platform rules** — satisfied **automatically** as a byproduct of using Openlayer: capturing
   production traces, running CI/CD tests, evaluating bias/PII/hallucination, project metadata (owner,
   risk, approval). No upload. https://docs.openlayer.com/governance/platform-rules.md
-- **Evidence-based rules** — a human uploads a document or link (model card, risk assessment, policy),
-  per project or workspace-wide, with a renewal cadence. https://docs.openlayer.com/governance/evidence-based-rules.md
+- **Evidence-based rules** — a human uploads a document or link (model card, risk assessment, policy)
+  or records an attestation (a value measured outside Openlayer, such as energy, uptime, or an audit
+  score), per project or workspace-wide, with a renewal cadence.
+  https://docs.openlayer.com/governance/evidence-based-rules.md
 
 ## REST API (frameworks, rules, compliance, evidence)
 
@@ -49,7 +51,11 @@ authoritative — cross-check the governance docs pages, not the spec.
   `development_traces_enabled`, `development_notifications_enabled`, `monitoring_mode_enabled`,
   `monitoring_traces_enabled`, `monitoring_sessions_enabled`, `monitoring_users_enabled`,
   `monitoring_notifications_enabled`, `test_setup`, `project_risk_level_set`, `project_description_set`,
-  `project_owner_set`.
+  `project_owner_set`. An `evidence` rule with `evidenceType: attestation` also requires
+  `renewalCadenceDays` (1-3650, counted from the attested period's end) and `automationParams`:
+  `measure` (1-120 characters), `unit` (1-50), `comparison` (`gte`, `lte`, or `between`), `target`
+  for `gte`/`lte` or `target_min` and `target_max` for `between`, and optional `baseline`.
+  `automationParams` must be null for other evidence types (400 otherwise).
 - **Auto-create `test_setup` tests:** `autoCreateTests` and `autoCreateTestRuleIds` on
   `PUT /frameworks/{id}`, and the UI review:
   https://docs.openlayer.com/governance/api-access.md and
@@ -67,13 +73,23 @@ authoritative — cross-check the governance docs pages, not the spec.
 - **Compliance status:** `GET /workspaces/{workspaceId}/rule-results` (filter to one framework with
   `?frameworkId=<id>`; results are per scoped project) · `GET|PUT /rule-results/{id}`.
 - **Evidence:** `GET|POST /rule-results/{id}/evidence` — the required field depends on the rule's
-  `evidenceType`: document → `storageUri`, url → `url`, text → `text`. Send **only** that one field (e.g.
-  `{"storageUri": "..."}`) — an extra field like `fileName` gets 400 "Unknown field." Posting valid
-  evidence flips the rule-result from `pending` to `passing`. For a **document**, get the `storageUri` by
+  `evidenceType`. For document, url, and text, send **only** that one field (document → `storageUri`,
+  url → `url`, text → `text`; e.g. `{"storageUri": "..."}`) — an extra field like `fileName` gets 400
+  "Unknown field." Posting valid evidence for those types flips the rule-result from `pending` to
+  `passing`. For a **document**, get the `storageUri` by
   uploading the file first via the storage presigned-URL flow (`client.storage.presigned_url` /
   `POST /storage/presigned-url?objectName=<name>`, which returns both a `storageUri` and a one-time upload
   `url`), then upload to that `url` as **multipart/form-data** (`curl -F "file=@..."`) — it rejects `PUT`
   (405) and a raw POST body (415) — and post the returned `storageUri` — see `references/data-access.md`.
+  For `attestation`, post `value` (a number), `periodStart` and `periodEnd` (`YYYY-MM-DD`; start on or
+  before end, and end can't be in the future), and `description` (how it was measured, required, at most
+  2000 characters; `text` is rejected). Optionally include `unit` (must match the rule's), `name`, and a
+  `url` or a `storageUri` (not both). `value`, `unit`, `periodStart`, and `periodEnd` are rejected on
+  other evidence types. Only the latest attestation counts (latest `periodEnd`; a later post for the same
+  period replaces it). None yet, or the rule `unit` edited since → `pending`; period ended more than
+  `renewalCadenceDays` ago → `failing` (stale); otherwise `passing` if the value meets the target,
+  `failing` if not. The POST is scored immediately; an attestation that later ages out fails at the next
+  scheduled evaluation. Posting one does not by itself flip the result to `passing`.
 
 Bearer `OPENLAYER_API_KEY` is sufficient for all of the above (no cookie/admin auth needed).
 
@@ -105,7 +121,8 @@ For a `test_setup` rule, flip `autoCreateTests` instead of hand-building tests. 
 | Creating a `platform` rule with no `automationType` | rule-result errors "Unknown automation type" | Set a valid `automationType` (e.g. `monitoring_traces_enabled`) so it can auto-evaluate |
 | Expecting auto-created tests from framework POST, a disabled framework, or the PUT response | Nothing is created then | The job runs after a PUT that leaves an **enabled** framework with `autoCreateTests` on. A create POST has no rules yet, so a subset's `autoCreateTestRuleIds` goes on a later PUT. Hand-build only rules whose `blocker` is set (`requires_column`, `requires_parameters`, `requires_reference_dataset`, `unsupported_subtype`, `no_default_threshold`) |
 | Rule create with only `name` | 400 (scope/type required) | Include `scope` and `type` |
-| Evidence POST with the wrong field, or an extra field (e.g. `fileName`) | 400 (field required / "Unknown field") | Send exactly one field matching `evidenceType`: `storageUri`/`url`/`text`, nothing else |
+| Evidence POST with the wrong field, or an extra field (e.g. `fileName`) | 400 (field required / "Unknown field") | For document/url/text, send exactly one field: `storageUri`/`url`/`text`. An attestation POST is not that one-field shape; `value`, `unit`, `periodStart`, and `periodEnd` are rejected on those types |
+| Attestation rule missing `renewalCadenceDays` or `automationParams`, or expecting the POST to pass | 400 on create; the result can stay `pending` or go `failing` | Set the cadence (1-3650, from the period end) and `automationParams`; leave `automationParams` null on other evidence types. A post passes only when the latest value meets the target and is not stale |
 | Uploading to the presigned URL with `PUT` or a raw body | 405 / 415 | POST as `multipart/form-data` (`curl -F "file=@..."`) |
 | Confusing the two rule types | Wrong expectation | Platform rules auto-satisfy via usage; evidence rules need uploads |
 | Trying to `DELETE` a built-in framework/rule | Rejected | Only custom frameworks/rules are deletable |
