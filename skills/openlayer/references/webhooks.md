@@ -12,14 +12,18 @@ Docs: https://docs.openlayer.com/security/webhooks/overview.md , /manage-webhook
 
 ## Create / manage
 
-Webhooks are gated by a feature flag — the deployment must have `ENABLE_WEBHOOKS` enabled. All endpoints
-require **workspace-admin** auth.
+Webhooks are gated by a feature flag — the deployment must have `ENABLE_WEBHOOKS` enabled.
+Managing a subscription is permission-gated (`*_WEBHOOK`, admin role). A workspace API key is
+accepted (`Authorization: Bearer <API key>`); the key's role ceiling and workspace binding still apply.
 
 - **UI:** Workspace settings → Webhooks → endpoint URL + event types. The **signing secret is shown
   once** — store it immediately (it can't be retrieved later).
-- **REST** (workspace-admin **session/cookie** auth — not an API key): `POST /v1/workspaces/{workspaceId}/webhooks`
-  with `url` + `eventTypes[]`; `GET`/`PUT`/`DELETE` to list/update/remove; `GET …/webhooks/{id}/deliveries`
-  for the delivery log (90-day retention).
+- **REST:** `GET|POST /v1/workspaces/{workspaceId}/webhooks` and
+  `GET|PUT|DELETE /v1/workspaces/{workspaceId}/webhooks/{webhookId}`.
+  Create with `url` + `eventTypes[]`. Shapes:
+  https://docs.openlayer.com/security/webhooks/manage-webhooks.md
+- Delivery log (`GET …/webhooks/{id}/deliveries`, 90-day retention):
+  https://docs.openlayer.com/security/webhooks/manage-webhooks.md
 
 ## Event types
 
@@ -64,3 +68,4 @@ Deliveries expect a 2xx within ~10s; failures retry up to 3× with backoff. Dedu
 | `==` string compare on signatures | Timing-attack risk | Use `hmac.compare_digest` |
 | Ignoring retries | Duplicate processing | Dedupe on `webhook-id` |
 | Slow/non-2xx endpoint | Marked failed, retried | Respond 2xx fast; do work async |
+| Read-only or non-admin API key on webhook CRUD | 403 | `*_WEBHOOK` is admin-role; the key's role ceiling applies |
