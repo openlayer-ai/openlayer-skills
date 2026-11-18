@@ -20,6 +20,9 @@ require **workspace-admin** auth.
 - **REST** (workspace-admin **session/cookie** auth — not an API key): `POST /v1/workspaces/{workspaceId}/webhooks`
   with `url` + `eventTypes[]`; `GET`/`PUT`/`DELETE` to list/update/remove; `GET …/webhooks/{id}/deliveries`
   for the delivery log (90-day retention).
+- **MCP:** when the Openlayer MCP is connected, create, list, update, and delete workspace webhooks
+  with `create_alert_webhook`, `get_alert_settings`, `update_alert_webhook`, and `delete_alert_webhook`.
+  `create_alert_webhook` shows the signing secret once.
 
 ## Event types
 
