@@ -1,6 +1,6 @@
 ---
 name: openlayer-custom-metrics
-description: Author a custom Openlayer metric in Python, push it with the openlayer metrics CLI, and use it in a test. Use when the prebuilt test catalog lacks the metric you need and you want a bespoke score computed over a dataset.
+description: Author a custom Openlayer metric in Python, push it with the openlayer metrics CLI or the Openlayer MCP, and use it in a test. Use when the prebuilt test catalog lacks the metric you need and you want a bespoke score computed over a dataset.
 ---
 
 # Openlayer Custom Metrics
@@ -59,6 +59,10 @@ openlayer metrics run -d metrics     # optional local run — needs deps install
 `push` reads `OPENLAYER_API_KEY` / `OPENLAYER_BASE_URL` / `OPENLAYER_PROJECT_ID` from env (see
 `references/cli.md`). `openlayer metrics pull` fetches existing metrics into the working dir, and
 `openlayer metrics delete <key>` removes one.
+
+With the Openlayer MCP connected, push via MCP instead of the CLI — local stdio: `push_custom_metric`
+(skips junk folders, does not read `.openlayerignore`); hosted server: `create_presigned_upload_url`
+then `finalize_custom_metric` — and `list_custom_metrics` to check what's already registered.
 
 **Name the metric directory exactly the metric `key`** (e.g. key `wordCountUnderLimit` → dir
 `wordCountUnderLimit/`). At evaluation the platform extracts the bundle and looks for `<key>/run.py`; a
