@@ -24,7 +24,7 @@ Openlayer docs change frequently. Resolve the current answer from docs before wr
 - Tests: `tests/overview`, `tests/catalog/<test>`
 - Guardrails: `guardrails/overview`
 - CLI commands: `api-reference/cli/commands/<cmd>`
-- REST API + SDKs (Go/Java/Python/Ruby/TypeScript): see their sections in `llms.txt`
+- REST API + SDKs (C#/.NET, Go, Java, Python, Ruby, TypeScript): see their sections in `llms.txt`
 
 ## When you cite docs to the user
 

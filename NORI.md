@@ -25,6 +25,7 @@ On wake:
 - `openlayer-ai/openlayer-java`
 - `openlayer-ai/openlayer-ruby`
 - `openlayer-ai/openlayer-go`
+- `openlayer-ai/openlayer-csharp`
 - `openlayer-ai/olga`
 - `openlayer-ai/openlayer-mcp`
 - `openlayer-ai/openlayer-public-api`
